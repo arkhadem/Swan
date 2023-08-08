@@ -1,0 +1,9 @@
+swan_local_scalar
+swan_local_neon
+swan_phone_scalar
+swan_phone_neon
+obj/
+back/
+data/
+.clang-format
+compile_flags.txt
