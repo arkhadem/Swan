@@ -90,7 +90,7 @@ int ec_ilog(opus_uint32 _v);
 #define silk_SMLALBB(a64, b16, c16) silk_ADD64((a64), (opus_int64)((opus_int32)(b16) * (opus_int32)(c16)))
 
 /* (a32 * b32) */
-#define silk_SMULL(a32, b32) ((opus_int64)(a32) * /*(opus_int64)*/ (b32))
+#define silk_SMULL(a32, b32) ((opus_int64)(a32) * (opus_int64)(b32))
 
 #define silk_SMLABB_ovflw(a32, b32, c32) (silk_ADD32_ovflw((a32), ((opus_int32)((opus_int16)(b32))) * (opus_int32)((opus_int16)(c32))))
 

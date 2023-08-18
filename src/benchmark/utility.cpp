@@ -3,16 +3,8 @@
 std::map<std::string, std::map<std::string, kernel_utility_t>> utility_functions;
 
 void register_utilities() {
-#ifdef SWAN_SIMULATION
-    utility_functions["libjpeg"]["rgb_to_ycbcr"] = rgb_to_ycbcr_utility;
-    utility_functions["libopus"]["pitch_xcorr"] = pitch_xcorr_utility;
-    utility_functions["libwebp"]["tm_prediction"] = tm_prediction_utility;
     utility_functions["zlib"]["adler32"] = adler32_utility;
-    utility_functions["skia"]["convolve_horizontally"] = convolve_horizontally_utility;
-    utility_functions["webaudio"]["is_audible"] = is_audible_utility;
-    utility_functions["xnnpack"]["gemm_fp32"] = gemm_fp32_utility;
-    utility_functions["libvpx"]["sad"] = sad_utility;
-#else
+
     utility_functions["libjpeg"]["rgb_to_gray"] = rgb_to_gray_utility;
     utility_functions["libjpeg"]["ycbcr_to_rgb"] = ycbcr_to_rgb_utility;
     utility_functions["libjpeg"]["rgb_to_ycbcr"] = rgb_to_ycbcr_utility;
@@ -36,14 +28,6 @@ void register_utilities() {
     utility_functions["libwebp"]["vertical_filter"] = vertical_filter_utility;
     utility_functions["libwebp"]["gradient_filter"] = gradient_filter_utility;
 
-    utility_functions["boringssl"]["aes"] = aes_utility;
-    utility_functions["boringssl"]["des"] = des_utility;
-    utility_functions["boringssl"]["chacha20"] = chacha20_utility;
-    utility_functions["boringssl"]["sha256"] = sha256_utility;
-
-    utility_functions["zlib"]["adler32"] = adler32_utility;
-    utility_functions["zlib"]["crc32"] = crc32_utility;
-
     utility_functions["skia"]["convolve_horizontally"] = convolve_horizontally_utility;
     utility_functions["skia"]["convolve_vertically"] = convolve_vertically_utility;
     utility_functions["skia"]["row_blend"] = row_blend_utility;
@@ -55,18 +39,11 @@ void register_utilities() {
     utility_functions["webaudio"]["sum_from"] = sum_from_utility;
     utility_functions["webaudio"]["handle_nan"] = handle_nan_utility;
 
-    utility_functions["optroutines"]["memchr"] = memchr_utility;
-    utility_functions["optroutines"]["memcmp"] = memcmp_utility;
-    utility_functions["optroutines"]["memset"] = memset_utility;
-    utility_functions["optroutines"]["strlen"] = strlen_utility;
-
     utility_functions["xnnpack"]["gemm_fp32"] = gemm_fp32_utility;
     utility_functions["xnnpack"]["gemm_int32"] = gemm_int32_utility;
-    utility_functions["xnnpack"]["gemm_fp16"] = gemm_fp16_utility;
     utility_functions["xnnpack"]["gemm_int16"] = gemm_int16_utility;
     utility_functions["xnnpack"]["spmm_fp32"] = spmm_fp32_utility;
     utility_functions["xnnpack"]["spmm_int32"] = spmm_int32_utility;
-    utility_functions["xnnpack"]["spmm_fp16"] = spmm_fp16_utility;
     utility_functions["xnnpack"]["spmm_int16"] = spmm_int16_utility;
 
     utility_functions["libopus"]["biquad_alt"] = biquad_alt_utility;
@@ -79,10 +56,33 @@ void register_utilities() {
     utility_functions["libvpx"]["sad"] = sad_utility;
     utility_functions["libvpx"]["quant"] = quant_utility;
 
+#ifndef SWAN_SIMULATION
+
+    // boringssl is not supported in simulation mode
+    utility_functions["boringssl"]["aes"] = aes_utility;
+    utility_functions["boringssl"]["des"] = des_utility;
+    utility_functions["boringssl"]["chacha20"] = chacha20_utility;
+    utility_functions["boringssl"]["sha256"] = sha256_utility;
+
+    // crc32 is not supported in simulation mode
+    utility_functions["zlib"]["crc32"] = crc32_utility;
+
+    // optroutines is not supported in simulation mode
+    utility_functions["optroutines"]["memchr"] = memchr_utility;
+    utility_functions["optroutines"]["memcmp"] = memcmp_utility;
+    utility_functions["optroutines"]["memset"] = memset_utility;
+    utility_functions["optroutines"]["strlen"] = strlen_utility;
+
+    // pffft is not supported in simulation mode
     utility_functions["pffft"]["fft_forward_real"] = fft_forward_real_utility;
     utility_functions["pffft"]["fft_backward_real"] = fft_backward_real_utility;
     utility_functions["pffft"]["fft_forward_complex"] = fft_forward_complex_utility;
     utility_functions["pffft"]["fft_backward_complex"] = fft_backward_complex_utility;
+
+    // FP16 is not supported in simulation mode
+    utility_functions["xnnpack"]["gemm_fp16"] = gemm_fp16_utility;
+    utility_functions["xnnpack"]["spmm_fp16"] = spmm_fp16_utility;
+
 #endif
 }
 
@@ -134,7 +134,7 @@ void sparse_init_1D(int count0, double sparsity, double *data, double min_val, d
     memcpy(data, temp.data(), count0 * sizeof(double));
 }
 
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
 void sparse_init_1D(int count0, float sparsity, __fp16 *data, __fp16 min_val, __fp16 max_val) {
     std::random_device random_device;
     auto rng = std::mt19937(random_device());

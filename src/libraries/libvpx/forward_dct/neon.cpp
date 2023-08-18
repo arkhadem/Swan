@@ -10,7 +10,6 @@
 
 #include "neon.hpp"
 #include "forward_dct.hpp"
-#include <arm_neon.h>
 
 static inline void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
     vst1q_s16(buf, a);

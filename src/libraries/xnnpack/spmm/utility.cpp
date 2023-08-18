@@ -171,5 +171,7 @@ void spmm_comparer(config_t *config,
 
 kernel_utility_t spmm_fp32_utility = {spmm_config_init<float>, spmm_input_init<float>, spmm_output_init<float>, spmm_comparer<float>};
 kernel_utility_t spmm_int32_utility = {spmm_config_init<int32_t>, spmm_input_init<int32_t>, spmm_output_init<int32_t>, spmm_comparer<int32_t>};
+#ifndef SWAN_SIMULATION
 kernel_utility_t spmm_fp16_utility = {spmm_config_init<__fp16>, spmm_input_init<__fp16>, spmm_output_init<__fp16>, spmm_comparer<__fp16>};
+#endif
 kernel_utility_t spmm_int16_utility = {spmm_config_init<int16_t>, spmm_input_init<int16_t>, spmm_output_init<int16_t>, spmm_comparer<int16_t>};

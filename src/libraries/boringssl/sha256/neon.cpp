@@ -32,7 +32,6 @@
 
 #include "neon.hpp"
 #include "sha256.hpp"
-#include <arm_neon.h>
 
 typedef struct sha256_neon_core {
     uint32x4_t abcd, efgh;

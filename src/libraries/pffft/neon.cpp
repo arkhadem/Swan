@@ -52,13 +52,13 @@
    order to take advantage of SIMD instructions of modern CPUs.
 */
 
+#include "neon.hpp"
 #include "pffft.hpp"
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <arm_neon.h>
 #define v4sf float32x4_t
 #define SIMD_SZ 4
 #define VZERO() vdupq_n_f32(0)

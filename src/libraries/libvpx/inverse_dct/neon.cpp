@@ -10,7 +10,6 @@
 
 #include "neon.hpp"
 #include "inverse_dct.hpp"
-#include <arm_neon.h>
 
 static inline int16x8_t dct_const_round_shift_low_8(const int32x4_t *const in) {
     return vcombine_s16(vrshrn_n_s32(in[0], DCT_CONST_BITS), vrshrn_n_s32(in[1], DCT_CONST_BITS));

@@ -21,7 +21,34 @@
 
 #ifndef CACHE_STATUS
 #define CACHE_STATUS CACHE_STATUS_WARM
-#endif
+#endif // CACHE_STATUS
+
+#ifdef SWAN_SIMULATION
+
+#include "fake_neon.hpp"
+
+#else // SWAN_SIMULATION
+
+#include <arm_neon.h>
+
+#endif // SWAN_SIMULATION
+
+#define SWAN_REG_128_TYPE 128
+#define SWAN_REG_256_TYPE 256
+#define SWAN_REG_512_TYPE 512
+#define SWAN_REG_1024_TYPE 1024
+
+#ifndef SWAN_SIM_REG_TYPE
+#define SWAN_SIM_REG_TYPE SWAN_REG_128_TYPE
+#endif // SWAN_SIM_REG_TYPE
+
+#ifndef SWAN_REG_TYPE
+#ifdef SWAN_SIMULATION
+#define SWAN_REG_TYPE SWAN_SIM_REG_TYPE
+#else // SWAN_SIMULATION
+#define SWAN_REG_TYPE SWAN_REG_128_TYPE
+#endif // SWAN_SIMULATION
+#endif // SWAN_REG_TYPE
 
 typedef struct config_s {
     int granularity;
@@ -63,23 +90,7 @@ typedef enum platform_e {
     MAX_PLAT
 } platform_t;
 
-void benchmark_runner(platform_t platform, char *library, char *kernel, int rounds, bool execute);
+void benchmark_runner(platform_t platform, const char *library, const char *kernel, int rounds, bool execute, bool list);
 long *pollute_cache(size_t size);
-
-// #ifndef SWAN_SIMULATION
-// #define SWAN_SIMULATION
-// #endif
-
-#ifdef SWAN_SIMULATION
-#define SWAN_REG_128_TYPE 128
-#define SWAN_REG_256_TYPE 256
-#define SWAN_REG_512_TYPE 512
-#define SWAN_REG_1024_TYPE 1024
-
-#ifndef SWAN_REG_TYPE
-#define SWAN_REG_TYPE SWAN_REG_512_TYPE
-#endif
-
-#endif
 
 #endif /* EB6E52BD_79AF_40E4_9EF0_FE0FBEAE172F */

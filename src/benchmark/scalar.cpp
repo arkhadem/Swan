@@ -7,16 +7,8 @@
 #include <stdio.h>
 
 void register_scalar_kernels() {
-#ifdef SWAN_SIMULATION
-    kernel_functions["libjpeg"]["rgb_to_ycbcr"][platform_t::SCALAR_PLAT] = rgb_to_ycbcr_scalar;
-    kernel_functions["libopus"]["pitch_xcorr"][platform_t::SCALAR_PLAT] = pitch_xcorr_scalar;
-    kernel_functions["libwebp"]["tm_prediction"][platform_t::SCALAR_PLAT] = tm_prediction_scalar;
     kernel_functions["zlib"]["adler32"][platform_t::SCALAR_PLAT] = adler32_scalar;
-    kernel_functions["skia"]["convolve_horizontally"][platform_t::SCALAR_PLAT] = convolve_horizontally_scalar;
-    kernel_functions["webaudio"]["is_audible"][platform_t::SCALAR_PLAT] = is_audible_scalar;
-    kernel_functions["xnnpack"]["gemm_fp32"][platform_t::SCALAR_PLAT] = gemm_fp32_scalar;
-    kernel_functions["libvpx"]["sad"][platform_t::SCALAR_PLAT] = sad_scalar;
-#else
+
     kernel_functions["libjpeg"]["rgb_to_gray"][platform_t::SCALAR_PLAT] = rgb_to_gray_scalar;
     kernel_functions["libjpeg"]["ycbcr_to_rgb"][platform_t::SCALAR_PLAT] = ycbcr_to_rgb_scalar;
     kernel_functions["libjpeg"]["rgb_to_ycbcr"][platform_t::SCALAR_PLAT] = rgb_to_ycbcr_scalar;
@@ -40,14 +32,6 @@ void register_scalar_kernels() {
     kernel_functions["libwebp"]["vertical_filter"][platform_t::SCALAR_PLAT] = vertical_filter_scalar;
     kernel_functions["libwebp"]["gradient_filter"][platform_t::SCALAR_PLAT] = gradient_filter_scalar;
 
-    kernel_functions["boringssl"]["aes"][platform_t::SCALAR_PLAT] = aes_scalar;
-    kernel_functions["boringssl"]["des"][platform_t::SCALAR_PLAT] = des_scalar;
-    kernel_functions["boringssl"]["chacha20"][platform_t::SCALAR_PLAT] = chacha20_scalar;
-    kernel_functions["boringssl"]["sha256"][platform_t::SCALAR_PLAT] = sha256_scalar;
-
-    kernel_functions["zlib"]["adler32"][platform_t::SCALAR_PLAT] = adler32_scalar;
-    kernel_functions["zlib"]["crc32"][platform_t::SCALAR_PLAT] = crc32_scalar;
-
     kernel_functions["skia"]["convolve_horizontally"][platform_t::SCALAR_PLAT] = convolve_horizontally_scalar;
     kernel_functions["skia"]["convolve_vertically"][platform_t::SCALAR_PLAT] = convolve_vertically_scalar;
     kernel_functions["skia"]["row_blend"][platform_t::SCALAR_PLAT] = row_blend_scalar;
@@ -59,18 +43,11 @@ void register_scalar_kernels() {
     kernel_functions["webaudio"]["sum_from"][platform_t::SCALAR_PLAT] = sum_from_scalar;
     kernel_functions["webaudio"]["handle_nan"][platform_t::SCALAR_PLAT] = handle_nan_scalar;
 
-    kernel_functions["optroutines"]["memchr"][platform_t::SCALAR_PLAT] = memchr_scalar;
-    kernel_functions["optroutines"]["memcmp"][platform_t::SCALAR_PLAT] = memcmp_scalar;
-    kernel_functions["optroutines"]["memset"][platform_t::SCALAR_PLAT] = memset_scalar;
-    kernel_functions["optroutines"]["strlen"][platform_t::SCALAR_PLAT] = strlen_scalar;
-
     kernel_functions["xnnpack"]["gemm_fp32"][platform_t::SCALAR_PLAT] = gemm_fp32_scalar;
     kernel_functions["xnnpack"]["gemm_int32"][platform_t::SCALAR_PLAT] = gemm_int32_scalar;
-    kernel_functions["xnnpack"]["gemm_fp16"][platform_t::SCALAR_PLAT] = gemm_fp16_scalar;
     kernel_functions["xnnpack"]["gemm_int16"][platform_t::SCALAR_PLAT] = gemm_int16_scalar;
     kernel_functions["xnnpack"]["spmm_fp32"][platform_t::SCALAR_PLAT] = spmm_fp32_scalar;
     kernel_functions["xnnpack"]["spmm_int32"][platform_t::SCALAR_PLAT] = spmm_int32_scalar;
-    kernel_functions["xnnpack"]["spmm_fp16"][platform_t::SCALAR_PLAT] = spmm_fp16_scalar;
     kernel_functions["xnnpack"]["spmm_int16"][platform_t::SCALAR_PLAT] = spmm_int16_scalar;
 
     kernel_functions["libopus"]["biquad_alt"][platform_t::SCALAR_PLAT] = biquad_alt_scalar;
@@ -83,9 +60,32 @@ void register_scalar_kernels() {
     kernel_functions["libvpx"]["sad"][platform_t::SCALAR_PLAT] = sad_scalar;
     kernel_functions["libvpx"]["quant"][platform_t::SCALAR_PLAT] = quant_scalar;
 
+#ifndef SWAN_SIMULATION
+
+    // boringssl is not supported in simulation mode
+    kernel_functions["boringssl"]["aes"][platform_t::SCALAR_PLAT] = aes_scalar;
+    kernel_functions["boringssl"]["des"][platform_t::SCALAR_PLAT] = des_scalar;
+    kernel_functions["boringssl"]["chacha20"][platform_t::SCALAR_PLAT] = chacha20_scalar;
+    kernel_functions["boringssl"]["sha256"][platform_t::SCALAR_PLAT] = sha256_scalar;
+
+    // crc32 is not supported in simulation mode
+    kernel_functions["zlib"]["crc32"][platform_t::SCALAR_PLAT] = crc32_scalar;
+
+    // optroutines is not supported in simulation mode
+    kernel_functions["optroutines"]["memchr"][platform_t::SCALAR_PLAT] = memchr_scalar;
+    kernel_functions["optroutines"]["memcmp"][platform_t::SCALAR_PLAT] = memcmp_scalar;
+    kernel_functions["optroutines"]["memset"][platform_t::SCALAR_PLAT] = memset_scalar;
+    kernel_functions["optroutines"]["strlen"][platform_t::SCALAR_PLAT] = strlen_scalar;
+
+    // pffft is not supported in simulation mode
     kernel_functions["pffft"]["fft_forward_real"][platform_t::SCALAR_PLAT] = pffft_scalar;
     kernel_functions["pffft"]["fft_backward_real"][platform_t::SCALAR_PLAT] = pffft_scalar;
     kernel_functions["pffft"]["fft_forward_complex"][platform_t::SCALAR_PLAT] = pffft_scalar;
     kernel_functions["pffft"]["fft_backward_complex"][platform_t::SCALAR_PLAT] = pffft_scalar;
+
+    // FP16 is not supported in simulation mode
+    kernel_functions["xnnpack"]["gemm_fp16"][platform_t::SCALAR_PLAT] = gemm_fp16_scalar;
+    kernel_functions["xnnpack"]["spmm_fp16"][platform_t::SCALAR_PLAT] = spmm_fp16_scalar;
+
 #endif
 }

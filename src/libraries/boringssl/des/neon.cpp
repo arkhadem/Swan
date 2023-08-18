@@ -3,7 +3,7 @@
 
 #include "neon.hpp"
 #include "des.hpp"
-#include <arm_neon.h>
+
 #include <stdio.h>
 
 #define CRYPTO_rotr_u32(value_0, value_1, shift) \

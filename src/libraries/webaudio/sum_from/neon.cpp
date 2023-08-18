@@ -28,7 +28,6 @@
 
 #include "neon.hpp"
 #include "sum_from.hpp"
-#include <arm_neon.h>
 
 static inline void Vadd(const float *source1p,
                         int source_stride1,

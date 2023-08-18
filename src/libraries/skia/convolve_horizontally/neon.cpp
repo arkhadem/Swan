@@ -7,11 +7,7 @@
 
 #include "neon.hpp"
 #include <stdio.h>
-#ifdef SWAN_SIMULATION
-#include <fake_neon.h>
-#else
-#include <arm_neon.h>
-#endif
+
 #include <stdint.h>
 
 #include "convolve_horizontally.hpp"

@@ -1,6 +1,5 @@
 #include "neon.hpp"
 #include "spmm.hpp"
-#include <arm_neon.h>
 
 void spmm_fp32_neon(config_t *config,
                     input_t *input,
@@ -516,6 +515,187 @@ void spmm_int32_neon(config_t *config,
     }
 }
 
+void spmm_int16_neon(config_t *config,
+                     input_t *input,
+                     output_t *output) {
+
+    spmm_config_t *spmm_config = (spmm_config_t *)config;
+    spmm_input_t<int16_t> *spmm_input = (spmm_input_t<int16_t> *)input;
+    spmm_output_t<int16_t> *spmm_output = (spmm_output_t<int16_t> *)output;
+
+#if CACHE_STATUS == CACHE_STATUS_WARM
+    int16_t *inout0 = spmm_output->inout0;
+    int16_t *inout1 = spmm_output->inout1;
+#endif
+
+    // number of layers
+    int layer_count = spmm_config->layer_count;
+
+    for (int layer = 0; layer < layer_count; layer++) {
+        int M = spmm_config->M[layer];
+        int N = spmm_config->N[layer];
+        int16_t *bias_vector = spmm_input->bias_vector[layer];
+        int16_t *weight_value_vector = spmm_input->weight_value_vector[layer];
+        int32_t *weight_IDX_vector = spmm_input->weight_IDX_vector[layer];
+        uint32_t *weight_NNZ_vector = spmm_input->weight_NNZ_vector[layer];
+        int16_t min = spmm_input->min[layer];
+        int16_t max = spmm_input->max[layer];
+
+#if CACHE_STATUS == CACHE_STATUS_WARM
+        int16_t *input_matrix;
+        if (layer == 0) {
+            input_matrix = spmm_input->input_matrix[layer];
+        } else if (layer % 2) {
+            input_matrix = inout0;
+        } else {
+            input_matrix = inout1;
+        }
+
+        int16_t *output_matrix;
+        if (layer == layer_count - 1) {
+            output_matrix = spmm_output->output_matrix[layer];
+        } else if (layer % 2) {
+            output_matrix = inout1;
+        } else {
+            output_matrix = inout0;
+        }
+#else
+        int16_t *input_matrix = spmm_input->input_matrix[layer];
+        int16_t *output_matrix = spmm_output->output_matrix[layer];
+#endif
+
+        const int16x8_t vmin = vld1q_dup_s16(&min);
+        const int16x8_t vmax = vld1q_dup_s16(&max);
+
+        int m = 0;
+
+        while (m + 32 <= M) {
+            for (int n = 0; n < N; n++) {
+                const int16_t *bias_addr = bias_vector + n;
+                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
+                int16x8_t vacc4567 = vacc0123;
+                int16x8_t vacc89AB = vacc0123;
+                int16x8_t vaccCDEF = vacc0123;
+
+                uint32_t max_k = weight_NNZ_vector[n + 1];
+                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
+
+                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
+                    const int16x8_t vi0123 = vld1q_s16(input_addr);
+                    const int16x8_t vi4567 = vld1q_s16(input_addr + 8);
+                    const int16x8_t vi89AB = vld1q_s16(input_addr + 16);
+                    const int16x8_t viCDEF = vld1q_s16(input_addr + 24);
+
+                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
+                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
+
+                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
+                    const int16x8_t vm4567 = vmulq_s16(vi4567, vw);
+                    const int16x8_t vm89AB = vmulq_s16(vi89AB, vw);
+                    const int16x8_t vmCDEF = vmulq_s16(viCDEF, vw);
+
+                    vacc0123 = vaddq_s16(vacc0123, vm0123);
+                    vacc4567 = vaddq_s16(vacc4567, vm4567);
+                    vacc89AB = vaddq_s16(vacc89AB, vm89AB);
+                    vaccCDEF = vaddq_s16(vaccCDEF, vmCDEF);
+                }
+
+                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
+                int16x8_t vout4567 = vminq_s16(vacc4567, vmax);
+                int16x8_t vout89AB = vminq_s16(vacc89AB, vmax);
+                int16x8_t voutCDEF = vminq_s16(vaccCDEF, vmax);
+                vout0123 = vmaxq_s16(vout0123, vmin);
+                vout4567 = vmaxq_s16(vout4567, vmin);
+                vout89AB = vmaxq_s16(vout89AB, vmin);
+                voutCDEF = vmaxq_s16(voutCDEF, vmin);
+
+                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
+                vst1q_s16(output_addr, vout0123);
+                vst1q_s16(output_addr + 8, vout4567);
+                vst1q_s16(output_addr + 16, vout89AB);
+                vst1q_s16(output_addr + 24, voutCDEF);
+            }
+            m += 32;
+        }
+
+        while (m + 16 <= M) {
+            for (int n = 0; n < N; n++) {
+                const int16_t *bias_addr = bias_vector + n;
+                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
+                int16x8_t vacc4567 = vacc0123;
+
+                uint32_t max_k = weight_NNZ_vector[n + 1];
+                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
+
+                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
+                    const int16x8_t vi0123 = vld1q_s16(input_addr);
+                    const int16x8_t vi4567 = vld1q_s16(input_addr + 8);
+
+                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
+                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
+
+                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
+                    const int16x8_t vm4567 = vmulq_s16(vi4567, vw);
+
+                    vacc0123 = vaddq_s16(vacc0123, vm0123);
+                    vacc4567 = vaddq_s16(vacc4567, vm4567);
+                }
+
+                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
+                int16x8_t vout4567 = vminq_s16(vacc4567, vmax);
+                vout0123 = vmaxq_s16(vout0123, vmin);
+                vout4567 = vmaxq_s16(vout4567, vmin);
+
+                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
+                vst1q_s16(output_addr, vout0123);
+                vst1q_s16(output_addr + 8, vout4567);
+            }
+            m += 16;
+        }
+
+        while (m + 8 <= M) {
+            for (int n = 0; n < N; n++) {
+                const int16_t *bias_addr = bias_vector + n;
+                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
+
+                uint32_t max_k = weight_NNZ_vector[n + 1];
+                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
+
+                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
+                    const int16x8_t vi0123 = vld1q_s16(input_addr);
+
+                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
+                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
+
+                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
+
+                    vacc0123 = vaddq_s16(vacc0123, vm0123);
+                }
+
+                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
+                vout0123 = vmaxq_s16(vout0123, vmin);
+
+                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
+                vst1q_s16(output_addr, vout0123);
+            }
+            m += 8;
+        }
+
+        for (int n = 0; n < N; n++) {
+            for (int m_l = m; m_l < M; m_l++) {
+                int16_t acc = bias_vector[n];
+                for (uint32_t k = weight_NNZ_vector[n]; k < weight_NNZ_vector[n + 1]; k++) {
+                    acc += (input_matrix[weight_IDX_vector[k] * M + m_l] * weight_value_vector[k]);
+                }
+                acc = acc < max ? acc : max;
+                acc = acc > min ? acc : min;
+                output_matrix[n * M + m_l] = acc;
+            }
+        }
+    }
+}
+
+#ifndef SWAN_SIMULATION
 void spmm_fp16_neon(config_t *config,
                     input_t *input,
                     output_t *output) {
@@ -700,183 +880,4 @@ void spmm_fp16_neon(config_t *config,
         }
     }
 }
-
-void spmm_int16_neon(config_t *config,
-                     input_t *input,
-                     output_t *output) {
-
-    spmm_config_t *spmm_config = (spmm_config_t *)config;
-    spmm_input_t<int16_t> *spmm_input = (spmm_input_t<int16_t> *)input;
-    spmm_output_t<int16_t> *spmm_output = (spmm_output_t<int16_t> *)output;
-
-#if CACHE_STATUS == CACHE_STATUS_WARM
-    int16_t *inout0 = spmm_output->inout0;
-    int16_t *inout1 = spmm_output->inout1;
 #endif
-
-    // number of layers
-    int layer_count = spmm_config->layer_count;
-
-    for (int layer = 0; layer < layer_count; layer++) {
-        int M = spmm_config->M[layer];
-        int N = spmm_config->N[layer];
-        int16_t *bias_vector = spmm_input->bias_vector[layer];
-        int16_t *weight_value_vector = spmm_input->weight_value_vector[layer];
-        int32_t *weight_IDX_vector = spmm_input->weight_IDX_vector[layer];
-        uint32_t *weight_NNZ_vector = spmm_input->weight_NNZ_vector[layer];
-        int16_t min = spmm_input->min[layer];
-        int16_t max = spmm_input->max[layer];
-
-#if CACHE_STATUS == CACHE_STATUS_WARM
-        int16_t *input_matrix;
-        if (layer == 0) {
-            input_matrix = spmm_input->input_matrix[layer];
-        } else if (layer % 2) {
-            input_matrix = inout0;
-        } else {
-            input_matrix = inout1;
-        }
-
-        int16_t *output_matrix;
-        if (layer == layer_count - 1) {
-            output_matrix = spmm_output->output_matrix[layer];
-        } else if (layer % 2) {
-            output_matrix = inout1;
-        } else {
-            output_matrix = inout0;
-        }
-#else
-        int16_t *input_matrix = spmm_input->input_matrix[layer];
-        int16_t *output_matrix = spmm_output->output_matrix[layer];
-#endif
-
-        const int16x8_t vmin = vld1q_dup_s16(&min);
-        const int16x8_t vmax = vld1q_dup_s16(&max);
-
-        int m = 0;
-
-        while (m + 32 <= M) {
-            for (int n = 0; n < N; n++) {
-                const int16_t *bias_addr = bias_vector + n;
-                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
-                int16x8_t vacc4567 = vacc0123;
-                int16x8_t vacc89AB = vacc0123;
-                int16x8_t vaccCDEF = vacc0123;
-
-                uint32_t max_k = weight_NNZ_vector[n + 1];
-                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
-
-                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
-                    const int16x8_t vi0123 = vld1q_s16(input_addr);
-                    const int16x8_t vi4567 = vld1q_s16(input_addr + 8);
-                    const int16x8_t vi89AB = vld1q_s16(input_addr + 16);
-                    const int16x8_t viCDEF = vld1q_s16(input_addr + 24);
-
-                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
-                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
-
-                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
-                    const int16x8_t vm4567 = vmulq_s16(vi4567, vw);
-                    const int16x8_t vm89AB = vmulq_s16(vi89AB, vw);
-                    const int16x8_t vmCDEF = vmulq_s16(viCDEF, vw);
-
-                    vacc0123 = vaddq_s16(vacc0123, vm0123);
-                    vacc4567 = vaddq_s16(vacc4567, vm4567);
-                    vacc89AB = vaddq_s16(vacc89AB, vm89AB);
-                    vaccCDEF = vaddq_s16(vaccCDEF, vmCDEF);
-                }
-
-                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
-                int16x8_t vout4567 = vminq_s16(vacc4567, vmax);
-                int16x8_t vout89AB = vminq_s16(vacc89AB, vmax);
-                int16x8_t voutCDEF = vminq_s16(vaccCDEF, vmax);
-                vout0123 = vmaxq_s16(vout0123, vmin);
-                vout4567 = vmaxq_s16(vout4567, vmin);
-                vout89AB = vmaxq_s16(vout89AB, vmin);
-                voutCDEF = vmaxq_s16(voutCDEF, vmin);
-
-                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
-                vst1q_s16(output_addr, vout0123);
-                vst1q_s16(output_addr + 8, vout4567);
-                vst1q_s16(output_addr + 16, vout89AB);
-                vst1q_s16(output_addr + 24, voutCDEF);
-            }
-            m += 32;
-        }
-
-        while (m + 16 <= M) {
-            for (int n = 0; n < N; n++) {
-                const int16_t *bias_addr = bias_vector + n;
-                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
-                int16x8_t vacc4567 = vacc0123;
-
-                uint32_t max_k = weight_NNZ_vector[n + 1];
-                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
-
-                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
-                    const int16x8_t vi0123 = vld1q_s16(input_addr);
-                    const int16x8_t vi4567 = vld1q_s16(input_addr + 8);
-
-                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
-                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
-
-                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
-                    const int16x8_t vm4567 = vmulq_s16(vi4567, vw);
-
-                    vacc0123 = vaddq_s16(vacc0123, vm0123);
-                    vacc4567 = vaddq_s16(vacc4567, vm4567);
-                }
-
-                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
-                int16x8_t vout4567 = vminq_s16(vacc4567, vmax);
-                vout0123 = vmaxq_s16(vout0123, vmin);
-                vout4567 = vmaxq_s16(vout4567, vmin);
-
-                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
-                vst1q_s16(output_addr, vout0123);
-                vst1q_s16(output_addr + 8, vout4567);
-            }
-            m += 16;
-        }
-
-        while (m + 8 <= M) {
-            for (int n = 0; n < N; n++) {
-                const int16_t *bias_addr = bias_vector + n;
-                int16x8_t vacc0123 = vld1q_dup_s16(bias_addr);
-
-                uint32_t max_k = weight_NNZ_vector[n + 1];
-                for (uint32_t k = weight_NNZ_vector[n]; k < max_k; k++) {
-
-                    const int16_t *input_addr = (const int16_t *)(input_matrix + weight_IDX_vector[k] * M + m);
-                    const int16x8_t vi0123 = vld1q_s16(input_addr);
-
-                    const int16_t *weight_addr = (const int16_t *)(weight_value_vector + k);
-                    const int16x8_t vw = vld1q_dup_s16(weight_addr);
-
-                    const int16x8_t vm0123 = vmulq_s16(vi0123, vw);
-
-                    vacc0123 = vaddq_s16(vacc0123, vm0123);
-                }
-
-                int16x8_t vout0123 = vminq_s16(vacc0123, vmax);
-                vout0123 = vmaxq_s16(vout0123, vmin);
-
-                int16_t *output_addr = (int16_t *)(output_matrix + n * M + m);
-                vst1q_s16(output_addr, vout0123);
-            }
-            m += 8;
-        }
-
-        for (int n = 0; n < N; n++) {
-            for (int m_l = m; m_l < M; m_l++) {
-                int16_t acc = bias_vector[n];
-                for (uint32_t k = weight_NNZ_vector[n]; k < weight_NNZ_vector[n + 1]; k++) {
-                    acc += (input_matrix[weight_IDX_vector[k] * M + m_l] * weight_value_vector[k]);
-                }
-                acc = acc < max ? acc : max;
-                acc = acc > min ? acc : min;
-                output_matrix[n * M + m_l] = acc;
-            }
-        }
-    }
-}

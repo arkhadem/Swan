@@ -12,9 +12,4 @@
 
 extern int layer_infos[LAYER_COUNT][3];
 
-// #ifndef __fp16
-// #define __fp16 uint16_t
-// #pragma message("WARNING: FP16 Precision set to int16_t")
-// #endif
-
 #endif /* D88A2E19_D3DF_45CA_AF95_AF1E0887F01E */

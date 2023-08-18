@@ -12,7 +12,7 @@
 // Author: Skal (pascal.massimino@gmail.com)
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "libwebp.hpp"

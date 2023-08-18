@@ -29,7 +29,6 @@
 #include "neon.hpp"
 #include "copy_with_gain.hpp"
 #include "neon.hpp"
-#include <arm_neon.h>
 
 static inline void Vsmul(const float *source_p,
                          int source_stride,

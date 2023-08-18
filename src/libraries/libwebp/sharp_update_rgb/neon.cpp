@@ -12,7 +12,7 @@
 // Author: Skal (pascal.massimino@gmail.com)
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "libwebp.hpp"
@@ -31,15 +31,16 @@ void sharp_update_rgb_neon(config_t *config,
     for (int row = 0; row < sharp_update_rgb_config->num_rows; row++) {
         int16_t *src = sharp_update_rgb_input->src[row];
         int16_t *ref = sharp_update_rgb_input->ref[row];
-        int16_t *dst = sharp_update_rgb_output->dst[row];
+        int16_t *dst_i = sharp_update_rgb_input->dst[row];
+        int16_t *dst_o = sharp_update_rgb_output->dst[row];
 
-        for (int i = 0; i < sharp_update_rgb_config->num_cols; i += 8, src += 8, ref += 8, dst += 8) {
+        for (int i = 0; i < sharp_update_rgb_config->num_cols; i += 8, src += 8, ref += 8, dst_i += 8, dst_o += 8) {
             const int16x8_t A = vld1q_s16(ref);
             const int16x8_t B = vld1q_s16(src);
-            const int16x8_t C = vld1q_s16(dst);
+            const int16x8_t C = vld1q_s16(dst_i);
             const int16x8_t D = vsubq_s16(A, B); // diff_uv
             const int16x8_t E = vaddq_s16(C, D); // new_uv
-            vst1q_s16(dst, E);
+            vst1q_s16(dst_o, E);
         }
     }
 }

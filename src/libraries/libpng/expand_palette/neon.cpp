@@ -10,7 +10,7 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 #include <stdio.h>
 

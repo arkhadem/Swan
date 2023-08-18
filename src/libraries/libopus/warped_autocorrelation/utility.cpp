@@ -50,7 +50,7 @@ void warped_autocorrelation_input_init(int count,
     for (int i = 0; i < count; i++) {
         alloc_1D<warped_autocorrelation_input_t>(1, warped_autocorrelation_input[i]);
 
-        init_alloc_2D<opus_int16>(warped_autocorrelation_config->block_count, warped_autocorrelation_config->length, warped_autocorrelation_input[i]->input_data);
+        init_alloc_2D<opus_int16>(warped_autocorrelation_config->block_count, warped_autocorrelation_config->length, warped_autocorrelation_input[i]->input_data, 8, 8);
     }
 
     input = (input_t **)warped_autocorrelation_input;

@@ -6,7 +6,7 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "row_blend.hpp"
@@ -44,7 +44,7 @@ void row_blend_neon(config_t *config,
 
             vdst_wide = vmull_u8(vdst, vdup_n_u8(dst_scale));
 
-            vdst_wide += vsrc_wide;
+            vdst_wide = vaddq_u16(vdst_wide, vsrc_wide);
             vres = vshrn_n_u16(vdst_wide, 8);
 
             vst1_u32(dst, vreinterpret_u32_u8(vres));

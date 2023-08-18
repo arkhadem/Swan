@@ -46,6 +46,7 @@ void sharp_update_rgb_input_init(int count,
 
         init_alloc_2D<int16_t>(sharp_update_rgb_config->num_rows, sharp_update_rgb_config->num_cols, sharp_update_rgb_input[i]->ref);
         init_alloc_2D<int16_t>(sharp_update_rgb_config->num_rows, sharp_update_rgb_config->num_cols, sharp_update_rgb_input[i]->src);
+        init_alloc_2D<int16_t>(sharp_update_rgb_config->num_rows, sharp_update_rgb_config->num_cols, sharp_update_rgb_input[i]->dst);
     }
 
     input = (input_t **)sharp_update_rgb_input;

@@ -15,6 +15,7 @@ typedef struct sharp_update_rgb_config_s : config_t {
 typedef struct sharp_update_rgb_input_s : input_t {
     int16_t **ref;
     int16_t **src;
+    int16_t **dst;
 } sharp_update_rgb_input_t;
 
 typedef struct sharp_update_rgb_output_s : output_t {

@@ -13,7 +13,7 @@
 //          Johann Koenig (johannkoenig@google.com)
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "dc_prediction.hpp"

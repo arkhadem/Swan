@@ -34,7 +34,6 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
 
 #include "rgb_to_gray.hpp"
 

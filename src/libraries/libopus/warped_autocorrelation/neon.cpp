@@ -28,19 +28,30 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "neon.hpp"
 #include "swan.hpp"
 #include "warped_autocorrelation.hpp"
-#include <arm_neon.h>
 
 static inline void calc_corr(const opus_int32 *const input_QS, opus_int64 *const corr_QC, const opus_int offset, const int32x4_t state_QS_s32x4) {
     int64x2_t corr_QC_s64x2[2], t_s64x2[2];
     const int32x4_t input_QS_s32x4 = vld1q_s32(input_QS + offset);
+#ifdef SWAN_SIMULATION
+    corr_QC_s64x2[0] = vld1q_s64(corr_QC + offset + 0);
+    corr_QC_s64x2[1] = vld1q_s64(corr_QC + offset + 2);
+#else
     corr_QC_s64x2[0] = vld1q_s64((const long *)(corr_QC + offset + 0));
     corr_QC_s64x2[1] = vld1q_s64((const long *)(corr_QC + offset + 2));
+#endif
+
     t_s64x2[0] = vmull_s32(vget_low_s32(state_QS_s32x4), vget_low_s32(input_QS_s32x4));
     t_s64x2[1] = vmull_s32(vget_high_s32(state_QS_s32x4), vget_high_s32(input_QS_s32x4));
     corr_QC_s64x2[0] = vsraq_n_s64(corr_QC_s64x2[0], t_s64x2[0], 2 * QS - QC);
     corr_QC_s64x2[1] = vsraq_n_s64(corr_QC_s64x2[1], t_s64x2[1], 2 * QS - QC);
+
+#ifdef SWAN_SIMULATION
+    vst1q_s64(corr_QC + offset + 0, corr_QC_s64x2[0]);
+    vst1q_s64(corr_QC + offset + 2, corr_QC_s64x2[1]);
+#else
     vst1q_s64((long *)(corr_QC + offset + 0), corr_QC_s64x2[0]);
     vst1q_s64((long *)(corr_QC + offset + 2), corr_QC_s64x2[1]);
+#endif
 }
 
 static inline int32x4_t calc_state(const int32x4_t state_QS0_s32x4, const int32x4_t state_QS0_1_s32x4, const int32x4_t state_QS1_1_s32x4, const int32x4_t warping_Q16_s32x4) {
@@ -214,8 +225,13 @@ void warped_autocorrelation_neon(config_t *config,
         for (i = 0; i <= order - 3; i += 4) {
             int32x4_t corr_s32x4;
             int64x2_t corr_QC0_s64x2, corr_QC1_s64x2;
+#ifdef SWAN_SIMULATION
+            corr_QC0_s64x2 = vld1q_s64(corr_QCT + i);
+            corr_QC1_s64x2 = vld1q_s64(corr_QCT + i + 2);
+#else
             corr_QC0_s64x2 = vld1q_s64((const long *)(corr_QCT + i));
             corr_QC1_s64x2 = vld1q_s64((const long *)(corr_QCT + i + 2));
+#endif
             corr_QC0_s64x2 = vshlq_s64(corr_QC0_s64x2, lsh_s64x2);
             corr_QC1_s64x2 = vshlq_s64(corr_QC1_s64x2, lsh_s64x2);
             corr_s32x4 = vcombine_s32(vmovn_s64(corr_QC1_s64x2), vmovn_s64(corr_QC0_s64x2));

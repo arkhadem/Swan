@@ -6,7 +6,7 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "convolve_vertically.hpp"

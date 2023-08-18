@@ -10,7 +10,6 @@
 
 #include "neon.hpp"
 #include "quant.hpp"
-#include <arm_neon.h>
 
 static inline void calculate_dqcoeff_and_store(const int16x8_t qcoeff,
                                                const int16x8_t dequant,

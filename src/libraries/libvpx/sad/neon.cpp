@@ -10,11 +10,6 @@
 
 #include "neon.hpp"
 #include "sad.hpp"
-#ifdef SWAN_SIMULATION
-#include <fake_neon.h>
-#else
-#include <arm_neon.h>
-#endif
 
 #ifndef SWAN_SIMULATION
 static inline uint16x8_t sad8x(const uint8_t *src_ptr, int src_stride,

@@ -30,7 +30,7 @@ void compare_1D(int count0, T *data1, T *data2, char *obj_name, T delta) {
     for (int i = 0; i < count0; i++) {
         if (abs<T>(data1[i], data2[i]) > delta) {
             if ((std::is_same<T, float>::value == false) && ((std::is_same<T, double>::value == false))
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
                 && (std::is_same<T, __fp16>::value == false)
 #endif
             )
@@ -61,7 +61,7 @@ void compare_2D(int count1, int count0, T **data1, T **data2, char *obj_name, T 
         for (int j = 0; j < count0; j++) {
             if (abs<T>(data1[i][j], data2[i][j]) > delta) {
                 if ((std::is_same<T, float>::value == false) && ((std::is_same<T, double>::value == false))
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
                     && (std::is_same<T, __fp16>::value == false)
 #endif
                 )
@@ -94,7 +94,7 @@ void compare_3D(int count2, int count1, int count0, T ***data1, T ***data2, char
             for (int k = 0; k < count0; k++) {
                 if (abs<T>(data1[i][j][k], data2[i][j][k]) > delta) {
                     if ((std::is_same<T, float>::value == false) && ((std::is_same<T, double>::value == false))
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
                         && (std::is_same<T, __fp16>::value == false)
 #endif
                     )
@@ -158,7 +158,7 @@ static inline uint32_t fp32_to_bits(float f) {
     return fp32.as_bits;
 }
 
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
 static inline uint16_t fp16_ieee_from_fp32_value(float f) {
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) || defined(__GNUC__) && !defined(__STRICT_ANSI__)
     const float scale_to_inf = 0x1.0p+112f;
@@ -233,7 +233,7 @@ void sparse_init_1D(int count0, float sparsity, T *data, T min_val, T max_val) {
         auto f32_rng = std::bind(std::uniform_real_distribution<float>(min_val, max_val), std::ref(rng));
         auto my_rng = std::bind(zero_remover<T>, count0, sparsity, f32_rng, min_val, max_val);
         std::generate(temp.begin() + sparse_end, temp.end(), std::ref(my_rng));
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
     } else if (std::is_same<T, __fp16>::value) {
         auto f32_rng = std::bind(std::uniform_real_distribution<float>(min_val, max_val), std::ref(rng));
         auto f16_rng = std::bind(fp16_ieee_from_fp32_value, f32_rng);
@@ -257,7 +257,7 @@ void sparse_init_1D(int count0, float sparsity, float *data, float min_val, floa
 
 void sparse_init_1D(int count0, double sparsity, double *data, double min_val, double max_val);
 
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
 void sparse_init_1D(int count0, float sparsity, __fp16 *data, __fp16 min_val, __fp16 max_val);
 #endif
 
@@ -265,7 +265,7 @@ template <typename T>
 void sparse_init_1D(int count0, float sparsity, T *data) {
     if ((std::is_same<T, float>::value) || ((std::is_same<T, double>::value))) {
         sparse_init_1D(count0, sparsity, data, (T)-100, (T)100);
-#ifndef __fp16
+#ifndef SWAN_SIMULATION
     } else if (std::is_same<T, __fp16>::value) {
         sparse_init_1D(count0, sparsity, data, (T)-10, (T)10);
 #endif
@@ -348,16 +348,7 @@ void init_alloc_3D(int count2, int count1, int count0, T ***&data, T min_val, T 
 
 void register_utilities();
 
-#ifdef SWAN_SIMULATION
-extern kernel_utility_t rgb_to_ycbcr_utility;
-extern kernel_utility_t pitch_xcorr_utility;
-extern kernel_utility_t tm_prediction_utility;
 extern kernel_utility_t adler32_utility;
-extern kernel_utility_t convolve_horizontally_utility;
-extern kernel_utility_t is_audible_utility;
-extern kernel_utility_t gemm_fp32_utility;
-extern kernel_utility_t sad_utility;
-#else
 
 extern kernel_utility_t downsample_utility;
 extern kernel_utility_t ycbcr_to_rgb_utility;
@@ -382,14 +373,6 @@ extern kernel_utility_t ve_prediction_utility;
 extern kernel_utility_t vertical_filter_utility;
 extern kernel_utility_t gradient_filter_utility;
 
-extern kernel_utility_t aes_utility;
-extern kernel_utility_t des_utility;
-extern kernel_utility_t chacha20_utility;
-extern kernel_utility_t sha256_utility;
-
-extern kernel_utility_t adler32_utility;
-extern kernel_utility_t crc32_utility;
-
 extern kernel_utility_t convolve_horizontally_utility;
 extern kernel_utility_t convolve_vertically_utility;
 extern kernel_utility_t row_blend_utility;
@@ -401,18 +384,11 @@ extern kernel_utility_t copy_with_sample_utility;
 extern kernel_utility_t sum_from_utility;
 extern kernel_utility_t handle_nan_utility;
 
-extern kernel_utility_t memchr_utility;
-extern kernel_utility_t memcmp_utility;
-extern kernel_utility_t memset_utility;
-extern kernel_utility_t strlen_utility;
-
 extern kernel_utility_t gemm_fp32_utility;
 extern kernel_utility_t gemm_int32_utility;
-extern kernel_utility_t gemm_fp16_utility;
 extern kernel_utility_t gemm_int16_utility;
 extern kernel_utility_t spmm_fp32_utility;
 extern kernel_utility_t spmm_int32_utility;
-extern kernel_utility_t spmm_fp16_utility;
 extern kernel_utility_t spmm_int16_utility;
 
 extern kernel_utility_t biquad_alt_utility;
@@ -425,10 +401,32 @@ extern kernel_utility_t inverse_dct_utility;
 extern kernel_utility_t sad_utility;
 extern kernel_utility_t quant_utility;
 
+#ifndef SWAN_SIMULATION
+
+// boringssl is not supported in simulation mode
+extern kernel_utility_t aes_utility;
+extern kernel_utility_t des_utility;
+extern kernel_utility_t chacha20_utility;
+extern kernel_utility_t sha256_utility;
+
+// crc32 is not supported in simulation mode
+extern kernel_utility_t crc32_utility;
+
+// optroutines is not supported in simulation mode
+extern kernel_utility_t memchr_utility;
+extern kernel_utility_t memcmp_utility;
+extern kernel_utility_t memset_utility;
+extern kernel_utility_t strlen_utility;
+
+// pffft is not supported in simulation mode
 extern kernel_utility_t fft_forward_real_utility;
 extern kernel_utility_t fft_backward_real_utility;
 extern kernel_utility_t fft_forward_complex_utility;
 extern kernel_utility_t fft_backward_complex_utility;
+
+// FP16 is not supported in simulation mode
+extern kernel_utility_t gemm_fp16_utility;
+extern kernel_utility_t spmm_fp16_utility;
 
 #endif
 

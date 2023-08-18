@@ -6,7 +6,7 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdint.h>
 
 #include "row_opaque.hpp"
@@ -19,9 +19,9 @@ inline uint8x8_t blend_32_neon(uint8x8_t src, uint8x8_t dst, uint16x8_t scale) {
     src_wide = vreinterpretq_s16_u16(vmovl_u8(src));
     dst_wide = vreinterpretq_s16_u16(vmovl_u8(dst));
 
-    src_wide = (src_wide - dst_wide) * vreinterpretq_s16_u16(scale);
+    src_wide = vmulq_s16(vsubq_s16(src_wide, dst_wide), vreinterpretq_s16_u16(scale));
 
-    dst_wide += vshrq_n_s16(src_wide, 5);
+    dst_wide = vaddq_s16(dst_wide, vshrq_n_s16(src_wide, 5));
 
     return vmovn_u16(vreinterpretq_u16_s16(dst_wide));
 }
@@ -76,12 +76,12 @@ void row_opaque_neon(config_t *config,
             vmaskR = vshrq_n_u16(vmask, SK_R16_SHIFT);
             vmaskG = vshrq_n_u16(vshlq_n_u16(vmask, SK_R16_BITS),
                                  SK_B16_BITS + SK_R16_BITS + 1);
-            vmaskB = vmask & vdupq_n_u16(SK_B16_MASK);
+            vmaskB = vandq_u16(vmask, vdupq_n_u16(SK_B16_MASK));
 
             // Upscale to 0..32
-            vmaskR = vmaskR + vshrq_n_u16(vmaskR, 4);
-            vmaskG = vmaskG + vshrq_n_u16(vmaskG, 4);
-            vmaskB = vmaskB + vshrq_n_u16(vmaskB, 4);
+            vmaskR = vaddq_u16(vmaskR, vshrq_n_u16(vmaskR, 4));
+            vmaskG = vaddq_u16(vmaskG, vshrq_n_u16(vmaskG, 4));
+            vmaskB = vaddq_u16(vmaskB, vshrq_n_u16(vmaskB, 4));
 
             vdst.val[NEON_A] = vbsl_u8(vsel_trans, vdst.val[NEON_A], vdup_n_u8(0xFF));
             vdst.val[NEON_R] = blend_32_neon(vcolR, vdst.val[NEON_R], vmaskR);

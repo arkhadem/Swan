@@ -29,7 +29,6 @@
 #include "neon.hpp"
 #include "copy_with_sample.hpp"
 #include "neon.hpp"
-#include <arm_neon.h>
 
 static inline void Vmul(const float *source1p,
                         int source_stride1,

@@ -42,11 +42,7 @@
  */
 
 #include "neon.hpp"
-#ifdef SWAN_SIMULATION
-#include <fake_neon.h>
-#else
-#include <arm_neon.h>
-#endif
+
 #include <stdint.h>
 
 #include "adler32.hpp"

@@ -1,9 +1,8 @@
-swan_local_scalar
-swan_local_neon
-swan_phone_scalar
-swan_phone_neon
+swan_local
+swan_phone
 obj/
 back/
 data/
 .clang-format
 compile_flags.txt
+*.txt

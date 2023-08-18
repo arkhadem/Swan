@@ -28,7 +28,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "neon.hpp"
 #include "lpc_prediction.hpp"
 #include "swan.hpp"
-#include <arm_neon.h>
 
 #define QA 24
 #define A_LIMIT SILK_FIX_CONST(0.99975, QA)

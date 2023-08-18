@@ -4,21 +4,37 @@
 #include "utility.hpp"
 #include <stddef.h>
 #include <stdio.h>
-
-#ifdef SWAN_SIMULATION
-#include <fake_neon.h>
-#endif
+#include <string>
 
 std::map<std::string, std::map<std::string, std::map<platform_e, kernel_func>>> kernel_functions;
 
-void dummy_finisher() {
-    kernel_functions["dummy_lib"]["dymmy_kernel"][platform_e::MAX_PLAT] = NULL;
+void list_libkers() {
+    printf("Supported library: [kernels]\n");
+    std::map<std::string, std::map<std::string, std::map<platform_e, kernel_func>>>::iterator lib_it = kernel_functions.begin();
+    while (lib_it != kernel_functions.end()) {
+        std::string lib_str = lib_it->first;
+        std::map<std::string, std::map<platform_e, kernel_func>> kernels_map = (lib_it++)->second;
+        printf("%s: [", lib_str.c_str());
+        std::map<std::string, std::map<platform_e, kernel_func>>::iterator ker_it = kernels_map.begin();
+        while (ker_it != kernels_map.end()) {
+            std::string ker_str = (ker_it++)->first;
+            printf("%s", ker_str.c_str());
+            if (ker_it != kernels_map.end()) {
+                printf(", ");
+            }
+        }
+        printf("]\n");
+    }
 }
 
-void benchmark_runner(platform_t platform, char *library, char *kernel, int rounds, bool execute) {
+void benchmark_runner(platform_t platform, const char *library, const char *kernel, int rounds, bool execute, bool list) {
     register_utilities();
     register_scalar_kernels();
     register_neon_kernels();
+    if (list) {
+        list_libkers();
+        return;
+    }
     std::string lib_str = std::string(library);
     std::string ker_str = std::string(kernel);
     if (kernel_functions.find(lib_str) == kernel_functions.end()) {
@@ -36,7 +52,7 @@ void benchmark_runner(platform_t platform, char *library, char *kernel, int roun
 
 #if CACHE_STATUS == CACHE_STATUS_COLD
     long *tmp = pollute_cache(sizeof(long) * CACHE_SIZE);
-    std::printf("Cache polluted (%ld) | Count (%d)\n", tmp[rand() % CACHE_SIZE], count);
+    printf("Cache polluted (%ld) | Count (%d)\n", tmp[rand() % CACHE_SIZE], count);
 #else
     count = 1;
 #endif
@@ -84,9 +100,6 @@ void benchmark_runner(platform_t platform, char *library, char *kernel, int roun
                 kernel_func(config, input[idx], output[idx]);
 #ifdef SWAN_SIMULATION
                 fake_neon_finisher();
-#endif
-#ifdef DYNAMORIO
-                dummy_finisher();
 #endif
             }
             clock_t end = clock();

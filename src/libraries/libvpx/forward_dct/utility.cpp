@@ -103,7 +103,7 @@ void forward_dct_comparer(config_t *config,
     forward_dct_output_t *forward_dct_output_scalar = (forward_dct_output_t *)output_scalar;
     forward_dct_output_t *forward_dct_output_neon = (forward_dct_output_t *)output_neon;
 
-    compare_2D<tran_low_t>(forward_dct_config->block_count, forward_dct_config->block_size, forward_dct_output_scalar->output_buff, forward_dct_output_neon->output_buff, (char *)"output_buff");
+    compare_2D<tran_low_t>(forward_dct_config->block_count, forward_dct_config->block_size, forward_dct_output_scalar->output_buff, forward_dct_output_neon->output_buff, (char *)"output_buff", 1);
 }
 
 kernel_utility_t forward_dct_utility = {forward_dct_config_init, forward_dct_input_init, forward_dct_output_init, forward_dct_comparer};

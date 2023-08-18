@@ -27,11 +27,12 @@ void sharp_update_rgb_scalar(config_t *config,
     for (int row = 0; row < sharp_update_rgb_config->num_rows; row++) {
         int16_t *src = sharp_update_rgb_input->src[row];
         int16_t *ref = sharp_update_rgb_input->ref[row];
-        int16_t *dst = sharp_update_rgb_output->dst[row];
+        int16_t *dst_i = sharp_update_rgb_input->dst[row];
+        int16_t *dst_o = sharp_update_rgb_output->dst[row];
 
-        for (int i = 0; i < sharp_update_rgb_config->num_cols; ++i, src++, ref++, dst++) {
+        for (int i = 0; i < sharp_update_rgb_config->num_cols; ++i, src++, ref++, dst_i++, dst_o++) {
             int diff_uv = *ref - *src;
-            *dst = *dst + diff_uv;
+            *dst_o = *dst_i + diff_uv;
         }
     }
 }

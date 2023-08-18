@@ -144,7 +144,9 @@ void gemm_comparer(config_t *config,
 
 kernel_utility_t gemm_fp32_utility = {gemm_config_init<float>, gemm_input_init<float>, gemm_output_init<float>, gemm_comparer<float>};
 kernel_utility_t gemm_int32_utility = {gemm_config_init<int32_t>, gemm_input_init<int32_t>, gemm_output_init<int32_t>, gemm_comparer<int32_t>};
+#ifndef SWAN_SIMULATION
 kernel_utility_t gemm_fp16_utility = {gemm_config_init<__fp16>, gemm_input_init<__fp16>, gemm_output_init<__fp16>, gemm_comparer<__fp16>};
+#endif
 kernel_utility_t gemm_int16_utility = {gemm_config_init<int16_t>, gemm_input_init<int16_t>, gemm_output_init<int16_t>, gemm_comparer<int16_t>};
 
 #ifdef SWAN_SIMULATION

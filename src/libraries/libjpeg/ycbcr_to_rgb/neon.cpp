@@ -37,7 +37,7 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
+
 #include <stdio.h>
 
 #include "ycbcr_to_rgb.hpp"

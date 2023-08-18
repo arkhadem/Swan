@@ -22,7 +22,6 @@
  */
 
 #include "neon.hpp"
-#include <arm_neon.h>
 
 #include "libjpeg.hpp"
 #include "upsample.hpp"

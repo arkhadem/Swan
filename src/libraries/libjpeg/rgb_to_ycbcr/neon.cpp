@@ -42,12 +42,6 @@
 
 #include "neon.hpp"
 
-#ifdef SWAN_SIMULATION
-#include <fake_neon.h>
-#else
-#include <arm_neon.h>
-#endif
-
 #include "rgb_to_ycbcr.hpp"
 
 #ifndef SWAN_SIMULATION
@@ -299,16 +293,16 @@ void rgb_to_ycbcr_neon(config_t *config,
             uint16x32_t b_h = vmovlqq_u8(vgetqq_high_u8(input_pixels.val[RGB_BLUE]));
 
             /* Compute Y = 0.29900 * R + 0.58700 * G + 0.11400 * B */
-            uint32x16_t y_ll = vmullqq_laneq_u16(vgetqq_low_u16(r_l), consts, 0);
+            uint32x16_t y_ll = vmulldq_laneq_u16(vgetqq_low_u16(r_l), consts, 0);
             y_ll = vmlalqq_laneq_u16(y_ll, vgetqq_low_u16(g_l), consts, 1);
             y_ll = vmlalqq_laneq_u16(y_ll, vgetqq_low_u16(b_l), consts, 2);
-            uint32x16_t y_lh = vmullqq_laneq_u16(vgetqq_high_u16(r_l), consts, 0);
+            uint32x16_t y_lh = vmulldq_laneq_u16(vgetqq_high_u16(r_l), consts, 0);
             y_lh = vmlalqq_laneq_u16(y_lh, vgetqq_high_u16(g_l), consts, 1);
             y_lh = vmlalqq_laneq_u16(y_lh, vgetqq_high_u16(b_l), consts, 2);
-            uint32x16_t y_hl = vmullqq_laneq_u16(vgetqq_low_u16(r_h), consts, 0);
+            uint32x16_t y_hl = vmulldq_laneq_u16(vgetqq_low_u16(r_h), consts, 0);
             y_hl = vmlalqq_laneq_u16(y_hl, vgetqq_low_u16(g_h), consts, 1);
             y_hl = vmlalqq_laneq_u16(y_hl, vgetqq_low_u16(b_h), consts, 2);
-            uint32x16_t y_hh = vmullqq_laneq_u16(vgetqq_high_u16(r_h), consts, 0);
+            uint32x16_t y_hh = vmulldq_laneq_u16(vgetqq_high_u16(r_h), consts, 0);
             y_hh = vmlalqq_laneq_u16(y_hh, vgetqq_high_u16(g_h), consts, 1);
             y_hh = vmlalqq_laneq_u16(y_hh, vgetqq_high_u16(b_h), consts, 2);
 
@@ -349,20 +343,20 @@ void rgb_to_ycbcr_neon(config_t *config,
             cr_hh = vmlslqq_laneq_u16(cr_hh, vgetqq_high_u16(b_h), consts, 7);
 
             /* Descale Y values (rounding right shift) and narrow to 16-bit. */
-            uint16x32_t y_l = vcombineqq_u16(vrshrnqq_n_u32(y_ll, 16), vrshrnqq_n_u32(y_lh, 16));
-            uint16x32_t y_h = vcombineqq_u16(vrshrnqq_n_u32(y_hl, 16), vrshrnqq_n_u32(y_hh, 16));
+            uint16x32_t y_l = vcombinedq_u16(vrshrnqq_n_u32(y_ll, 16), vrshrnqq_n_u32(y_lh, 16));
+            uint16x32_t y_h = vcombinedq_u16(vrshrnqq_n_u32(y_hl, 16), vrshrnqq_n_u32(y_hh, 16));
             /* Descale Cb values (right shift) and narrow to 16-bit. */
-            uint16x32_t cb_l = vcombineqq_u16(vshrnqq_n_u32(cb_ll, 16), vshrnqq_n_u32(cb_lh, 16));
-            uint16x32_t cb_h = vcombineqq_u16(vshrnqq_n_u32(cb_hl, 16), vshrnqq_n_u32(cb_hh, 16));
+            uint16x32_t cb_l = vcombinedq_u16(vshrnqq_n_u32(cb_ll, 16), vshrnqq_n_u32(cb_lh, 16));
+            uint16x32_t cb_h = vcombinedq_u16(vshrnqq_n_u32(cb_hl, 16), vshrnqq_n_u32(cb_hh, 16));
             /* Descale Cr values (right shift) and narrow to 16-bit. */
-            uint16x32_t cr_l = vcombineqq_u16(vshrnqq_n_u32(cr_ll, 16), vshrnqq_n_u32(cr_lh, 16));
-            uint16x32_t cr_h = vcombineqq_u16(vshrnqq_n_u32(cr_hl, 16), vshrnqq_n_u32(cr_hh, 16));
+            uint16x32_t cr_l = vcombinedq_u16(vshrnqq_n_u32(cr_ll, 16), vshrnqq_n_u32(cr_lh, 16));
+            uint16x32_t cr_h = vcombinedq_u16(vshrnqq_n_u32(cr_hl, 16), vshrnqq_n_u32(cr_hh, 16));
             /* Narrow Y, Cb, and Cr values to 8-bit and store to memory.  Buffer
             * overwrite is permitted up to the next multiple of ALIGN_SIZE bytes.
             */
-            vst1qq_u8(outptr0, vcombineqq_u8(vmovnqq_u16(y_l), vmovnqq_u16(y_h)));
-            vst1qq_u8(outptr1, vcombineqq_u8(vmovnqq_u16(cb_l), vmovnqq_u16(cb_h)));
-            vst1qq_u8(outptr2, vcombineqq_u8(vmovnqq_u16(cr_l), vmovnqq_u16(cr_h)));
+            vst1qq_u8(outptr0, vcombinedq_u8(vmovnqq_u16(y_l), vmovnqq_u16(y_h)));
+            vst1qq_u8(outptr1, vcombinedq_u8(vmovnqq_u16(cb_l), vmovnqq_u16(cb_h)));
+            vst1qq_u8(outptr2, vcombinedq_u8(vmovnqq_u16(cr_l), vmovnqq_u16(cr_h)));
 
             /* Increment pointers. */
             inptr += (64 * RGB_PIXELSIZE);
@@ -384,16 +378,16 @@ void rgb_to_ycbcr_neon(config_t *config,
             uint16x16_t b_h = vmovldq_u8(vgetdq_high_u8(input_pixels.val[RGB_BLUE]));
 
             /* Compute Y = 0.29900 * R + 0.58700 * G + 0.11400 * B */
-            uint32x8_t y_ll = vmulldq_laneq_u16(vgetdq_low_u16(r_l), consts, 0);
+            uint32x8_t y_ll = vmullq_laneq_u16(vgetdq_low_u16(r_l), consts, 0);
             y_ll = vmlaldq_laneq_u16(y_ll, vgetdq_low_u16(g_l), consts, 1);
             y_ll = vmlaldq_laneq_u16(y_ll, vgetdq_low_u16(b_l), consts, 2);
-            uint32x8_t y_lh = vmulldq_laneq_u16(vgetdq_high_u16(r_l), consts, 0);
+            uint32x8_t y_lh = vmullq_laneq_u16(vgetdq_high_u16(r_l), consts, 0);
             y_lh = vmlaldq_laneq_u16(y_lh, vgetdq_high_u16(g_l), consts, 1);
             y_lh = vmlaldq_laneq_u16(y_lh, vgetdq_high_u16(b_l), consts, 2);
-            uint32x8_t y_hl = vmulldq_laneq_u16(vgetdq_low_u16(r_h), consts, 0);
+            uint32x8_t y_hl = vmullq_laneq_u16(vgetdq_low_u16(r_h), consts, 0);
             y_hl = vmlaldq_laneq_u16(y_hl, vgetdq_low_u16(g_h), consts, 1);
             y_hl = vmlaldq_laneq_u16(y_hl, vgetdq_low_u16(b_h), consts, 2);
-            uint32x8_t y_hh = vmulldq_laneq_u16(vgetdq_high_u16(r_h), consts, 0);
+            uint32x8_t y_hh = vmullq_laneq_u16(vgetdq_high_u16(r_h), consts, 0);
             y_hh = vmlaldq_laneq_u16(y_hh, vgetdq_high_u16(g_h), consts, 1);
             y_hh = vmlaldq_laneq_u16(y_hh, vgetdq_high_u16(b_h), consts, 2);
 
@@ -434,20 +428,20 @@ void rgb_to_ycbcr_neon(config_t *config,
             cr_hh = vmlsldq_laneq_u16(cr_hh, vgetdq_high_u16(b_h), consts, 7);
 
             /* Descale Y values (rounding right shift) and narrow to 16-bit. */
-            uint16x16_t y_l = vcombinedq_u16(vrshrndq_n_u32(y_ll, 16), vrshrndq_n_u32(y_lh, 16));
-            uint16x16_t y_h = vcombinedq_u16(vrshrndq_n_u32(y_hl, 16), vrshrndq_n_u32(y_hh, 16));
+            uint16x16_t y_l = vcombineq_u16(vrshrndq_n_u32(y_ll, 16), vrshrndq_n_u32(y_lh, 16));
+            uint16x16_t y_h = vcombineq_u16(vrshrndq_n_u32(y_hl, 16), vrshrndq_n_u32(y_hh, 16));
             /* Descale Cb values (right shift) and narrow to 16-bit. */
-            uint16x16_t cb_l = vcombinedq_u16(vshrndq_n_u32(cb_ll, 16), vshrndq_n_u32(cb_lh, 16));
-            uint16x16_t cb_h = vcombinedq_u16(vshrndq_n_u32(cb_hl, 16), vshrndq_n_u32(cb_hh, 16));
+            uint16x16_t cb_l = vcombineq_u16(vshrndq_n_u32(cb_ll, 16), vshrndq_n_u32(cb_lh, 16));
+            uint16x16_t cb_h = vcombineq_u16(vshrndq_n_u32(cb_hl, 16), vshrndq_n_u32(cb_hh, 16));
             /* Descale Cr values (right shift) and narrow to 16-bit. */
-            uint16x16_t cr_l = vcombinedq_u16(vshrndq_n_u32(cr_ll, 16), vshrndq_n_u32(cr_lh, 16));
-            uint16x16_t cr_h = vcombinedq_u16(vshrndq_n_u32(cr_hl, 16), vshrndq_n_u32(cr_hh, 16));
+            uint16x16_t cr_l = vcombineq_u16(vshrndq_n_u32(cr_ll, 16), vshrndq_n_u32(cr_lh, 16));
+            uint16x16_t cr_h = vcombineq_u16(vshrndq_n_u32(cr_hl, 16), vshrndq_n_u32(cr_hh, 16));
             /* Narrow Y, Cb, and Cr values to 8-bit and store to memory.  Buffer
             * overwrite is permitted up to the next multiple of ALIGN_SIZE bytes.
             */
-            vst1dq_u8(outptr0, vcombinedq_u8(vmovndq_u16(y_l), vmovndq_u16(y_h)));
-            vst1dq_u8(outptr1, vcombinedq_u8(vmovndq_u16(cb_l), vmovndq_u16(cb_h)));
-            vst1dq_u8(outptr2, vcombinedq_u8(vmovndq_u16(cr_l), vmovndq_u16(cr_h)));
+            vst1dq_u8(outptr0, vcombineq_u8(vmovndq_u16(y_l), vmovndq_u16(y_h)));
+            vst1dq_u8(outptr1, vcombineq_u8(vmovndq_u16(cb_l), vmovndq_u16(cb_h)));
+            vst1dq_u8(outptr2, vcombineq_u8(vmovndq_u16(cr_l), vmovndq_u16(cr_h)));
 
             /* Increment pointers. */
             inptr += (32 * RGB_PIXELSIZE);

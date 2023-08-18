@@ -7,16 +7,8 @@
 #include <stdio.h>
 
 void register_neon_kernels() {
-#ifdef SWAN_SIMULATION
-    kernel_functions["libjpeg"]["rgb_to_ycbcr"][platform_t::NEON_PLAT] = rgb_to_ycbcr_neon;
-    kernel_functions["libopus"]["pitch_xcorr"][platform_t::NEON_PLAT] = pitch_xcorr_neon;
-    kernel_functions["libwebp"]["tm_prediction"][platform_t::NEON_PLAT] = tm_prediction_neon;
     kernel_functions["zlib"]["adler32"][platform_t::NEON_PLAT] = adler32_neon;
-    kernel_functions["skia"]["convolve_horizontally"][platform_t::NEON_PLAT] = convolve_horizontally_neon;
-    kernel_functions["webaudio"]["is_audible"][platform_t::NEON_PLAT] = is_audible_neon;
-    kernel_functions["xnnpack"]["gemm_fp32"][platform_t::NEON_PLAT] = gemm_fp32_neon;
-    kernel_functions["libvpx"]["sad"][platform_t::NEON_PLAT] = sad_neon;
-#else
+
     kernel_functions["libjpeg"]["rgb_to_gray"][platform_t::NEON_PLAT] = rgb_to_gray_neon;
     kernel_functions["libjpeg"]["ycbcr_to_rgb"][platform_t::NEON_PLAT] = ycbcr_to_rgb_neon;
     kernel_functions["libjpeg"]["rgb_to_ycbcr"][platform_t::NEON_PLAT] = rgb_to_ycbcr_neon;
@@ -40,14 +32,6 @@ void register_neon_kernels() {
     kernel_functions["libwebp"]["vertical_filter"][platform_t::NEON_PLAT] = vertical_filter_neon;
     kernel_functions["libwebp"]["gradient_filter"][platform_t::NEON_PLAT] = gradient_filter_neon;
 
-    kernel_functions["boringssl"]["aes"][platform_t::NEON_PLAT] = aes_neon;
-    kernel_functions["boringssl"]["des"][platform_t::NEON_PLAT] = des_neon;
-    kernel_functions["boringssl"]["chacha20"][platform_t::NEON_PLAT] = chacha20_neon;
-    kernel_functions["boringssl"]["sha256"][platform_t::NEON_PLAT] = sha256_neon;
-
-    kernel_functions["zlib"]["adler32"][platform_t::NEON_PLAT] = adler32_neon;
-    kernel_functions["zlib"]["crc32"][platform_t::NEON_PLAT] = crc32_neon;
-
     kernel_functions["skia"]["convolve_horizontally"][platform_t::NEON_PLAT] = convolve_horizontally_neon;
     kernel_functions["skia"]["convolve_vertically"][platform_t::NEON_PLAT] = convolve_vertically_neon;
     kernel_functions["skia"]["row_blend"][platform_t::NEON_PLAT] = row_blend_neon;
@@ -59,18 +43,11 @@ void register_neon_kernels() {
     kernel_functions["webaudio"]["sum_from"][platform_t::NEON_PLAT] = sum_from_neon;
     kernel_functions["webaudio"]["handle_nan"][platform_t::NEON_PLAT] = handle_nan_neon;
 
-    kernel_functions["optroutines"]["memchr"][platform_t::NEON_PLAT] = memchr_neon;
-    kernel_functions["optroutines"]["memcmp"][platform_t::NEON_PLAT] = memcmp_neon;
-    kernel_functions["optroutines"]["memset"][platform_t::NEON_PLAT] = memset_neon;
-    kernel_functions["optroutines"]["strlen"][platform_t::NEON_PLAT] = strlen_neon;
-
     kernel_functions["xnnpack"]["gemm_fp32"][platform_t::NEON_PLAT] = gemm_fp32_neon;
     kernel_functions["xnnpack"]["gemm_int32"][platform_t::NEON_PLAT] = gemm_int32_neon;
-    kernel_functions["xnnpack"]["gemm_fp16"][platform_t::NEON_PLAT] = gemm_fp16_neon;
     kernel_functions["xnnpack"]["gemm_int16"][platform_t::NEON_PLAT] = gemm_int16_neon;
     kernel_functions["xnnpack"]["spmm_fp32"][platform_t::NEON_PLAT] = spmm_fp32_neon;
     kernel_functions["xnnpack"]["spmm_int32"][platform_t::NEON_PLAT] = spmm_int32_neon;
-    kernel_functions["xnnpack"]["spmm_fp16"][platform_t::NEON_PLAT] = spmm_fp16_neon;
     kernel_functions["xnnpack"]["spmm_int16"][platform_t::NEON_PLAT] = spmm_int16_neon;
 
     kernel_functions["libopus"]["biquad_alt"][platform_t::NEON_PLAT] = biquad_alt_neon;
@@ -83,9 +60,32 @@ void register_neon_kernels() {
     kernel_functions["libvpx"]["sad"][platform_t::NEON_PLAT] = sad_neon;
     kernel_functions["libvpx"]["quant"][platform_t::NEON_PLAT] = quant_neon;
 
+#ifndef SWAN_SIMULATION
+
+    // boringssl is not supported in simulation mode
+    kernel_functions["boringssl"]["aes"][platform_t::NEON_PLAT] = aes_neon;
+    kernel_functions["boringssl"]["des"][platform_t::NEON_PLAT] = des_neon;
+    kernel_functions["boringssl"]["chacha20"][platform_t::NEON_PLAT] = chacha20_neon;
+    kernel_functions["boringssl"]["sha256"][platform_t::NEON_PLAT] = sha256_neon;
+
+    // crc32 is not supported in simulation mode
+    kernel_functions["zlib"]["crc32"][platform_t::NEON_PLAT] = crc32_neon;
+
+    // optroutines is not supported in simulation mode
+    kernel_functions["optroutines"]["memchr"][platform_t::NEON_PLAT] = memchr_neon;
+    kernel_functions["optroutines"]["memcmp"][platform_t::NEON_PLAT] = memcmp_neon;
+    kernel_functions["optroutines"]["memset"][platform_t::NEON_PLAT] = memset_neon;
+    kernel_functions["optroutines"]["strlen"][platform_t::NEON_PLAT] = strlen_neon;
+
+    // pffft is not supported in simulation mode
     kernel_functions["pffft"]["fft_forward_real"][platform_t::NEON_PLAT] = pffft_neon;
     kernel_functions["pffft"]["fft_backward_real"][platform_t::NEON_PLAT] = pffft_neon;
     kernel_functions["pffft"]["fft_forward_complex"][platform_t::NEON_PLAT] = pffft_neon;
     kernel_functions["pffft"]["fft_backward_complex"][platform_t::NEON_PLAT] = pffft_neon;
+
+    // FP16 is not supported in simulation mode
+    kernel_functions["xnnpack"]["gemm_fp16"][platform_t::NEON_PLAT] = gemm_fp16_neon;
+    kernel_functions["xnnpack"]["spmm_fp16"][platform_t::NEON_PLAT] = spmm_fp16_neon;
+
 #endif
 }
