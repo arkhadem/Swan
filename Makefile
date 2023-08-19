@@ -127,33 +127,10 @@ phone: $(PHONE_OBJS) $(BENCH_DIR)/main.cpp
 	@$(PHONE_CPP) $(PHONE_CFLAGS) -o swan_$@ $?
 
 push:
-	adb push swan_phone* /data/local/tmp/Swan/
-
-GDB = $(NDK_PATH)/prebuilt/linux-x86_64/bin/gdb
-# NOTE: terminate running gdb processes on device before launching the new debugger
-# FIXME: have to first switch to executable's root as cwd then run the debugger with relative path
-
-KERNEL_DIR = /data/local/tmp/Swan
-DEBUG_EXE = swan_phone
-SCRIPTS_PATH = /home/home/HEVCBench/scripts/
-debug_neon: push
-	@echo "> Debugging $(DEBUG_EXE)..."
-	@$(SCRIPTS_PATH)/free_port.sh 8888
-	@adb shell "cd $(KERNEL_DIR) && (exec $(DEVICE_GDBSERVER) :8888 ./$(DEBUG_EXE) > ./stdio.log 2>&1 &)"
-	@adb forward tcp:8888 tcp:8888
-	@${GDB} \
-	-ex "set logging on" \
-	-ex "set logging overwrite on" \
-	-ex "set logging file debug.log" \
-	-ex "set print pretty on" \
-	-ex "target remote :8888"
+	adb push swan_phone $(PHONE_SWAN_DIR)/
 
 .PHONY: clean
 clean:
 	@rm -rf $(LOCAL_OBJ_DIR) $(PHONE_OBJ_DIR)
 	@rm -rf swan_local
 	@rm -rf swan_phone
-	@rm -rf a.out
-
-clean_data:
-	@rm *_graph.txt
