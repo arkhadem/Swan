@@ -27,7 +27,7 @@ void list_libkers() {
     }
 }
 
-void benchmark_runner(platform_t platform, const char *library, const char *kernel, int rounds, bool execute, bool list) {
+void benchmark_runner(platform_t platform, const char *library, const char *kernel, int iterations, bool execute, bool list) {
     register_utilities();
     register_scalar_kernels();
     register_neon_kernels();
@@ -82,14 +82,10 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
         utility_function.input_init(count, config, input);
         utility_function.output_init(count, config, output);
         int idx = 0;
-        int iterations = 0;
         // in us
         double time_spent = 0.0000;
-        int current_round = 0;
-        while (current_round != rounds) {
-
-            iterations++;
-
+        int current_iteration = 0;
+        while (current_iteration != iterations) {
             clock_t start = clock();
             if (execute) {
 #ifdef SWAN_SIMULATION
@@ -107,13 +103,13 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
             clock_t clock_spent = end - start;
             time_spent += ((double)clock_spent) * ((double)1000000.0000) / ((double)CLOCKS_PER_SEC);
 
-            current_round++;
+            current_iteration++;
             idx = (idx + 1) % count;
 
-            // rounds > 0: energy evaluation mode (exit only from while condition)
+            // iterations > 0: energy evaluation mode (exit only from while condition)
             // time_spent must be more than 1 second
-            // at least 10 rounds must be evaluated
-            if ((rounds <= 0) && (time_spent >= 1000000.0000) && (current_round >= 10)) {
+            // at least 10 iterations must be evaluated
+            if ((iterations <= 0) && (time_spent >= 1000000.0000) && (current_iteration >= 10)) {
                 break;
             }
 #ifdef SWAN_SIMULATION
@@ -121,14 +117,16 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
 #endif
         }
 
-#ifndef SWAN_SIMULATION
-        printf("Finished in"
-               " Total(%lf usec, %d iterations, %d granularity)"
-               " Raw(%lf usec, %d granularity)"
-               " Individual(%lf usec)\n",
-               time_spent, iterations, config->granularity,
-               time_spent / (double)iterations, config->granularity,
-               time_spent / (double)iterations / (double)config->granularity);
+        printf("Successfully finished run in");
+#ifdef SWAN_SIMULATION
+        printf("simulation mode!\n");
+#else
+        printf("experiment mode!\n");
 #endif
+        printf("iterations: %d (number of processing whole domain input)\n", current_iteration);
+        printf("total_time: %lf usec (total execution time of all iterations)\n", time_spent);
+        printf("iteration_time: %lf usec (execution time of one iterations)\n", time_spent / (double)current_iteration);
+        printf("granularity: %d (number of individual kernel calls per iteration)\n", config->granularity);
+        printf("kernel_time: %lf usec (execution time of one kernel call)\n", time_spent / (double)current_iteration / (double)config->granularity);
     }
 }

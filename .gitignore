@@ -6,3 +6,5 @@ data/
 .clang-format
 compile_flags.txt
 *.txt
+*.csv
+__pycache__

@@ -37,6 +37,7 @@ The following table shows the libraries and their usage across the evaluated mob
 - [src/benchmark](/src/benchmark/): benchmark infrastructure to configure and launch kernels, generate input data, and compare output results.
 - [src/libraries](/src/libraries/)`/[LIB]/[KER]`: scalar and vector implementation for `KER` kernel of `LIB` library.
 - [src/fake_neon](/src/fake_neon/): Arm Neon intrinsic simulator.
+- [src/scripts](/src/scripts/): Performance and power measurement scripts for Android Devices.
 
 ## Download
 
@@ -123,6 +124,22 @@ Run the benchmark suite with:
 - `KERNEL`: name of the target kernel
 
 Use `--help` for more options or `--list` to get a list of supported libraries and kernels on the target machine architecture.
+
+### Performance and Power Measurement of Android Devices
+
+Having built Swan for phone, you can use the [profiler script](/scripts/profiler.py) to dump profile results in a CSV file:
+
+```bash
+./scripts/profiler.py --measurement [power|performance] --output [profile.csv]
+```
+
+Profiler requires [Android Debug Bridge (adb)](https://developer.android.com/tools/releases/platform-tools) installed locally.
+Use `--help` for more options.
+
+**Recommendation:**
+
+- Configure core masks (CPU affinities) in [scripts/mask.py](/scripts/mask.py) based on your Android Device CPU configuration and use `--core [core_name]` to pin Swan process to a specific core. 
+- Use [adb wireless debugging](https://developer.android.com/tools/adb), specifically for power measurements.
 
 ## Arm Fake Neon Library
 

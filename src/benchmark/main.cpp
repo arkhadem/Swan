@@ -47,11 +47,11 @@ int main(int argc, char *argv[]) {
         .implicit_value(true);
 
 #ifndef SWAN_SIMULATION
-    program.add_argument("-r", "--rounds")
-        .help("Specific number of rounds that the experiment executes. If not specified, experiment runs for one second")
+    program.add_argument("-i", "--iterations")
+        .help("Specific number of iterations that the experiment executes. If not specified, experiment runs for one second")
         .default_value(-1)
         .scan<'i', int>()
-        .metavar("ROUNDS");
+        .metavar("ITERATIONS");
 
     program.add_argument("-e", "--execute")
         .help("When specifying this option, kernels will not be invoked (used for energy measurements)")
@@ -95,13 +95,13 @@ int main(int argc, char *argv[]) {
         }
     }
 #ifndef SWAN_SIMULATION
-    int rounds = program.get<int>("--rounds");
+    int iterations = program.get<int>("--iterations");
     bool execute = (program["--execute"] == true);
 #else
-    int rounds = -1;
+    int iterations = -1;
     bool execute = true;
 #endif
 
-    benchmark_runner(platform_type, library.c_str(), kernel.c_str(), rounds, execute, list);
+    benchmark_runner(platform_type, library.c_str(), kernel.c_str(), iterations, execute, list);
     return 0;
 }
