@@ -1,5 +1,6 @@
 swan_local
 swan_phone
+swan_riscv
 obj/
 back/
 data/
