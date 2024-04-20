@@ -91,6 +91,7 @@ RISCV_OBJS := $(filter-out $(RISCV_OBJ_DIR)/src/libraries/zlib/crc32/%,$(RISCV_O
 RISCV_OBJS := $(filter-out $(RISCV_OBJ_DIR)/src/libraries/optroutines/%,$(RISCV_OBJS))
 RISCV_OBJS := $(filter-out $(RISCV_OBJ_DIR)/src/libraries/pffft/%,$(RISCV_OBJS))
 RISCV_CFLAGS += $(foreach d, $(dir $(wildcard $(FAKE_NEON_DIR)/*.hpp)), -I$d)
+RISCV_CFLAGS := $(filter-out -fno-vectorize -fno-slp-vectorize,$(RISCV_CFLAGS))
 
 ifeq ($(SIMMOD),FALSE)
     $(info Simulation Mode -> OFF)
@@ -166,7 +167,7 @@ push:
 
 .PHONY: clean
 clean:
-	@rm -rf $(LOCAL_OBJ_DIR) $(PHONE_OBJ_DIR)
+	@rm -rf $(LOCAL_OBJ_DIR) $(PHONE_OBJ_DIR) $(RISCV_OBJ_DIR)
 	@rm -rf swan_local
 	@rm -rf swan_phone
 	@rm -rf swan_riscv
