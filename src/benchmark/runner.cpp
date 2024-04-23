@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string>
+#include <ctime>
 
 std::map<std::string, std::map<std::string, std::map<platform_e, kernel_func>>> kernel_functions;
 

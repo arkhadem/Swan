@@ -91,13 +91,21 @@ Cross-compile Swan with:
 make phone -j<num_threads>
 ```
 
+### RISCV Compilation
+
+Cross-compile Swan for RISC-V with:
+
+```bash
+make riscv -j<num_threads>
+```
+
 ### Compilation Flags
 
 Makefile accepts the following commandline arguments to configure the build.
 
 - `CACHE=[WARM|COLD]`: warm-up or cold-down caches before execution. Default is `WARM`.
 - `AUTOVEC=[FALSE|TRUE]`: using compiler auto-vectorization. Default is `FALSE`.
-- `SIMMOD=[FALSE|TRUE]`: simulation mode for local execution. Default is `FALSE` for `armv8.2-a` machines and `TRUE` for any other architectures. Uses [Arm Fake Neon Library](#arm-fake-neon-library).
+- `SIMMOD=[FALSE|TRUE]`: simulation mode for local/riscv execution. Default is `FALSE` for `armv8.2-a` machines and `TRUE` for any other architectures. Uses [Arm Fake Neon Library](#arm-fake-neon-library).
 - `SIMREG=[128|256|512|1024]`: maximum supported width of [example kernels](#examples) developed with fake wide vector register implementations (affective only in simulation mode).
 
 ### Example Builds
