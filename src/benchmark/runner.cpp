@@ -118,7 +118,7 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
 #endif
         }
 
-        printf("Successfully finished run in");
+        printf("Successfully finished run in ");
 #ifdef SWAN_SIMULATION
         printf("simulation mode!\n");
 #else
