@@ -3,6 +3,7 @@
 #include "swan.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -126,6 +127,7 @@ void *swan_aligned_malloc(size_t nb_bytes);
 template <typename T>
 void alloc_1D(int count0, T *&data) {
     data = (T *)swan_aligned_malloc(count0 * sizeof(T));
+    memset(data, 0, sizeof(T) * count0);
 }
 
 template <typename T>
