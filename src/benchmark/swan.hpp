@@ -25,7 +25,11 @@
 
 #ifdef SWAN_SIMULATION
 
+#if defined(NEON2RVV)
+#include "neon2rvv.h"
+#else
 #include "fake_neon.hpp"
+#endif
 
 #else // SWAN_SIMULATION
 

@@ -60,7 +60,13 @@ void read_paeth_neon(config_t *config,
 
         uint8x8_t vlast = vdup_n_u8(0);
         uint8x8x4_t vdest;
+#if defined(NEON2RVV)
+        #define GET(v, idx) __riscv_vget_v_u8m1x4_u8m1(v, idx)
+        #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+        SET(vdest, 3, vdup_n_u8(0));
+#else
         vdest.val[3] = vdup_n_u8(0);
+#endif
 
         for (; rp < rp_stop; rp += 16, pp += 16, rp_out += 16) {
             uint32x2x4_t vtmp;
@@ -76,6 +82,20 @@ void read_paeth_neon(config_t *config,
             vppt = png_ptr(uint8x8x4_t, &vtmp);
             vpp = *vppt;
 
+#if defined(NEON2RVV)
+            SET(vdest, 0, paeth(GET(vdest, 3), GET(vpp, 0), vlast));
+            SET(vdest, 0, vadd_u8(GET(vdest, 0), GET(vrp, 0)));
+            SET(vdest, 1, paeth(GET(vdest, 0), GET(vpp, 1), GET(vpp, 0)));
+            SET(vdest, 1, vadd_u8(GET(vdest, 1), GET(vrp, 1)));
+            SET(vdest, 2, paeth(GET(vdest, 1), GET(vpp, 2), GET(vpp, 1)));
+            SET(vdest, 2, vadd_u8(GET(vdest, 2), GET(vrp, 2)));
+            SET(vdest, 3, paeth(GET(vdest, 2), GET(vpp, 3), GET(vpp, 2)));
+            SET(vdest, 3, vadd_u8(GET(vdest, 3), GET(vrp, 3)));
+
+            vlast = GET(vpp, 3);
+            #undef GET
+            #undef SET
+#else
             vdest.val[0] = paeth(vdest.val[3], vpp.val[0], vlast);
             vdest.val[0] = vadd_u8(vdest.val[0], vrp.val[0]);
             vdest.val[1] = paeth(vdest.val[0], vpp.val[1], vpp.val[0]);
@@ -86,6 +106,7 @@ void read_paeth_neon(config_t *config,
             vdest.val[3] = vadd_u8(vdest.val[3], vrp.val[3]);
 
             vlast = vpp.val[3];
+#endif
 
             vdest_val = png_ldr(uint32x2x4_t, &vdest);
             vst4_lane_u32(png_ptr(uint32_t, rp_out), vdest_val, 0);

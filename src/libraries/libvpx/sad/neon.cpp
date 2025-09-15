@@ -175,7 +175,9 @@ void sad_neon(config_t *config,
 
         sad_output->return_val[block] = sad8x(src_ptr, src_stride, ref_ptr, ref_stride, 8);
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
         fake_neon_flusher();
+#endif
 #endif
     }
 }

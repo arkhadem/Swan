@@ -454,12 +454,23 @@ void rgb_to_ycbcr_neon(config_t *config,
 
             uint8x16x4_t input_pixels = vld4q_u8(inptr);
 
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_u8m1x4_u8m1(v, idx)
+            uint16x8_t r_l = vmovl_u8(vget_low_u8(GET(input_pixels, RGB_RED)));
+            uint16x8_t r_h = vmovl_u8(vget_high_u8(GET(input_pixels, RGB_RED)));
+            uint16x8_t g_l = vmovl_u8(vget_low_u8(GET(input_pixels, RGB_GREEN)));
+            uint16x8_t g_h = vmovl_u8(vget_high_u8(GET(input_pixels, RGB_GREEN)));
+            uint16x8_t b_l = vmovl_u8(vget_low_u8(GET(input_pixels, RGB_BLUE)));
+            uint16x8_t b_h = vmovl_u8(vget_high_u8(GET(input_pixels, RGB_BLUE)));
+            #undef GET
+#else
             uint16x8_t r_l = vmovl_u8(vget_low_u8(input_pixels.val[RGB_RED]));
             uint16x8_t g_l = vmovl_u8(vget_low_u8(input_pixels.val[RGB_GREEN]));
             uint16x8_t b_l = vmovl_u8(vget_low_u8(input_pixels.val[RGB_BLUE]));
             uint16x8_t r_h = vmovl_u8(vget_high_u8(input_pixels.val[RGB_RED]));
             uint16x8_t g_h = vmovl_u8(vget_high_u8(input_pixels.val[RGB_GREEN]));
             uint16x8_t b_h = vmovl_u8(vget_high_u8(input_pixels.val[RGB_BLUE]));
+#endif
 
             /* Compute Y = 0.29900 * R + 0.58700 * G + 0.11400 * B */
             uint32x4_t y_ll = vmull_laneq_u16(vget_low_u16(r_l), consts, 0);

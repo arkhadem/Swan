@@ -275,7 +275,9 @@ void tm_prediction_neon(config_t *config,
         }
 #endif
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
         fake_neon_flusher();
+#endif
 #endif
     }
 }

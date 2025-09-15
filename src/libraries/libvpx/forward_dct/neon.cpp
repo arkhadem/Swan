@@ -23,10 +23,20 @@ static inline void store_s16q_to_tran_low(tran_low_t *buf, const int16x8_t a) {
 // b0.val[1]: 04 05 06 07 20 21 22 23
 static inline int16x8x2_t vpx_vtrnq_s64_to_s16(int32x4_t a0, int32x4_t a1) {
     int16x8x2_t b0;
+    
+#if defined(NEON2RVV)
+    #define GET(v, idx) __riscv_vget_v_i16m1x2_i16m1(v, idx)
+    #define SET(v, idx, val) v = __riscv_vset_v_i16m1_i16m1x2(v, idx, val)
+    SET(b0, 0, vcombine_s16(vreinterpret_s16_s32(vget_low_s32(a0)),
+                             vreinterpret_s16_s32(vget_low_s32(a1))));
+    SET(b0, 1, vcombine_s16(vreinterpret_s16_s32(vget_high_s32(a0)),
+                             vreinterpret_s16_s32(vget_high_s32(a1))));
+#else
     b0.val[0] = vcombine_s16(vreinterpret_s16_s32(vget_low_s32(a0)),
                              vreinterpret_s16_s32(vget_low_s32(a1)));
     b0.val[1] = vcombine_s16(vreinterpret_s16_s32(vget_high_s32(a0)),
                              vreinterpret_s16_s32(vget_high_s32(a1)));
+#endif
     return b0;
 }
 
@@ -68,6 +78,18 @@ static inline void transpose_s16_8x8(int16x8_t *a0, int16x8_t *a1,
     // c3.val[0]: 41 51 61 71 45 55 65 75
     // c3.val[1]: 43 53 63 73 47 57 67 77
 
+#if defined(NEON2RVV)
+    const int32x4x2_t c0 = vtrnq_s32(vreinterpretq_s32_s16(GET(b0, 0)),
+                                     vreinterpretq_s32_s16(GET(b1, 0)));
+    const int32x4x2_t c1 = vtrnq_s32(vreinterpretq_s32_s16(GET(b0, 1)),
+                                     vreinterpretq_s32_s16(GET(b1, 1)));
+    const int32x4x2_t c2 = vtrnq_s32(vreinterpretq_s32_s16(GET(b2, 0)),
+                                     vreinterpretq_s32_s16(GET(b3, 0)));
+    const int32x4x2_t c3 = vtrnq_s32(vreinterpretq_s32_s16(GET(b2, 1)),
+                                     vreinterpretq_s32_s16(GET(b3, 1)));
+    #undef GET
+    #undef SET
+#else
     const int32x4x2_t c0 = vtrnq_s32(vreinterpretq_s32_s16(b0.val[0]),
                                      vreinterpretq_s32_s16(b1.val[0]));
     const int32x4x2_t c1 = vtrnq_s32(vreinterpretq_s32_s16(b0.val[1]),
@@ -76,6 +98,7 @@ static inline void transpose_s16_8x8(int16x8_t *a0, int16x8_t *a1,
                                      vreinterpretq_s32_s16(b3.val[0]));
     const int32x4x2_t c3 = vtrnq_s32(vreinterpretq_s32_s16(b2.val[1]),
                                      vreinterpretq_s32_s16(b3.val[1]));
+#endif
 
     // Swap 64 bit elements resulting in:
     // d0.val[0]: 00 10 20 30 40 50 60 70
@@ -86,6 +109,25 @@ static inline void transpose_s16_8x8(int16x8_t *a0, int16x8_t *a1,
     // d2.val[1]: 06 16 26 36 46 56 66 76
     // d3.val[0]: 03 13 23 33 43 53 63 73
     // d3.val[1]: 07 17 27 37 47 57 67 77
+#if defined(NEON2RVV)
+    #define GET(v, idx) __riscv_vget_v_i32m1x2_i32m1(v, idx)
+    const int16x8x2_t d0 = vpx_vtrnq_s64_to_s16(GET(c0, 0), GET(c2, 0));
+    const int16x8x2_t d1 = vpx_vtrnq_s64_to_s16(GET(c1, 0), GET(c3, 0));
+    const int16x8x2_t d2 = vpx_vtrnq_s64_to_s16(GET(c0, 1), GET(c2, 1));
+    const int16x8x2_t d3 = vpx_vtrnq_s64_to_s16(GET(c1, 1), GET(c3, 1));
+    #undef GET
+
+    #define GET(v, idx) __riscv_vget_v_i16m1x2_i16m1(v, idx)
+    *a0 = GET(d0, 0);
+    *a1 = GET(d1, 0);
+    *a2 = GET(d2, 0);
+    *a3 = GET(d3, 0);
+    *a4 = GET(d0, 1);
+    *a5 = GET(d1, 1);
+    *a6 = GET(d2, 1);
+    *a7 = GET(d3, 1);
+    #undef GET
+#else
     const int16x8x2_t d0 = vpx_vtrnq_s64_to_s16(c0.val[0], c2.val[0]);
     const int16x8x2_t d1 = vpx_vtrnq_s64_to_s16(c1.val[0], c3.val[0]);
     const int16x8x2_t d2 = vpx_vtrnq_s64_to_s16(c0.val[1], c2.val[1]);
@@ -99,6 +141,7 @@ static inline void transpose_s16_8x8(int16x8_t *a0, int16x8_t *a1,
     *a5 = d1.val[1];
     *a6 = d2.val[1];
     *a7 = d3.val[1];
+#endif
 }
 
 // fdct_round_shift((a +/- b) * c)

@@ -30,7 +30,13 @@ void read_avg_neon(config_t *config,
     for (int row = 0; row < read_avg_config->num_rows; row++) {
 
         uint8x8x4_t vdest;
+#if defined(NEON2RVV)
+        #define GET(v, idx) __riscv_vget_v_u8m1x4_u8m1(v, idx)
+        #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+        SET(vdest, 3, vdup_n_u8(0));
+#else
         vdest.val[3] = vdup_n_u8(0);
+#endif
 
         png_bytep rp = read_avg_input->input_buf[row];
         png_bytep rp_stop = read_avg_input->input_buf[row] + read_avg_config->num_cols;
@@ -51,6 +57,18 @@ void read_avg_neon(config_t *config,
             vppt = png_ptr(uint8x8x4_t, &vtmp);
             vpp = *vppt;
 
+#if defined(NEON2RVV)
+            SET(vdest, 0, vhadd_u8(GET(vdest, 3), GET(vpp, 0)));
+            SET(vdest, 0, vadd_u8(GET(vdest, 0), GET(vrp, 0)));
+            SET(vdest, 1, vhadd_u8(GET(vdest, 0), GET(vpp, 1)));
+            SET(vdest, 1, vadd_u8(GET(vdest, 1), GET(vrp, 1)));
+            SET(vdest, 2, vhadd_u8(GET(vdest, 1), GET(vpp, 2)));
+            SET(vdest, 2, vadd_u8(GET(vdest, 2), GET(vrp, 2)));
+            SET(vdest, 3, vhadd_u8(GET(vdest, 2), GET(vpp, 3)));
+            SET(vdest, 3, vadd_u8(GET(vdest, 3), GET(vrp, 3)));
+            #undef GET
+            #undef SET
+#else
             vdest.val[0] = vhadd_u8(vdest.val[3], vpp.val[0]);
             vdest.val[0] = vadd_u8(vdest.val[0], vrp.val[0]);
             vdest.val[1] = vhadd_u8(vdest.val[0], vpp.val[1]);
@@ -59,6 +77,7 @@ void read_avg_neon(config_t *config,
             vdest.val[2] = vadd_u8(vdest.val[2], vrp.val[2]);
             vdest.val[3] = vhadd_u8(vdest.val[2], vpp.val[3]);
             vdest.val[3] = vadd_u8(vdest.val[3], vrp.val[3]);
+#endif
 
             vdest_val = png_ldr(uint32x2x4_t, &vdest);
             vst4_lane_u32(png_ptr(uint32_t, rp_out), vdest_val, 0);

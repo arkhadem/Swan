@@ -49,7 +49,12 @@ void dispatch_alpha_neon(config_t *config,
         for (; i + 8 <= width - 1; i += 8) {
             uint8x8x4_t rgbX = vld4_u8((const uint8_t *)(src + 4 * i));
             const uint8x8_t alphas = vld1_u8(alpha + i);
+#if defined(NEON2RVV)
+            #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+            SET(rgbX, 0, alphas);
+#else
             rgbX.val[0] = alphas;
+#endif
             vst4_u8((uint8_t *)(dst + 4 * i), rgbX);
             mask8 = vand_u8(mask8, alphas);
         }

@@ -81,6 +81,22 @@ void upsample_neon(config_t *config,
             * the "even" and "odd" Y component values.  This effectively upsamples the
             * chroma components both horizontally and vertically.
             */
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_u8m1x2_u8m1(v, idx)
+            int16x8_t g0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y0, 0)));
+            int16x8_t r0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y0, 0)));
+            int16x8_t b0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y0, 0)));
+            int16x8_t g0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y0, 1)));
+            int16x8_t r0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y0, 1)));
+            int16x8_t b0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y0, 1)));
+            int16x8_t g1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y1, 0)));
+            int16x8_t r1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y1, 0)));
+            int16x8_t b1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y1, 0)));
+            int16x8_t g1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y1, 1)));
+            int16x8_t r1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y1, 1)));
+            int16x8_t b1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y1, 1)));
+            #undef GET
+#else
             int16x8_t g0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), y0.val[0]));
             int16x8_t r0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), y0.val[0]));
             int16x8_t b0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), y0.val[0]));
@@ -93,6 +109,7 @@ void upsample_neon(config_t *config,
             int16x8_t g1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), y1.val[1]));
             int16x8_t r1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), y1.val[1]));
             int16x8_t b1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), y1.val[1]));
+#endif
             /* Convert each component to unsigned and narrow, clamping to [0-255].
             * Re-interleave the "even" and "odd" component values.
             */
@@ -104,6 +121,21 @@ void upsample_neon(config_t *config,
             uint8x8x2_t b1 = vzip_u8(vqmovun_s16(b1_even), vqmovun_s16(b1_odd));
 
             uint8x16x4_t rgba0, rgba1;
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_u8m1x2_u8m1(v, idx)
+            #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+            SET(rgba0, RGB_RED, vcombine_u8(GET(r0, 0), GET(r0, 1)));
+            SET(rgba1, RGB_RED, vcombine_u8(GET(r1, 0), GET(r1, 1)));
+            SET(rgba0, RGB_GREEN, vcombine_u8(GET(g0, 0), GET(g0, 1)));
+            SET(rgba1, RGB_GREEN, vcombine_u8(GET(g1, 0), GET(g1, 1)));
+            SET(rgba0, RGB_BLUE, vcombine_u8(GET(b0, 0), GET(b0, 1)));
+            SET(rgba1, RGB_BLUE, vcombine_u8(GET(b1, 0), GET(b1, 1)));
+            /* Set alpha channel to opaque (0xFF). */
+            SET(rgba0, RGB_ALPHA, vdupq_n_u8(0xFF));
+            SET(rgba1, RGB_ALPHA, vdupq_n_u8(0xFF));
+            #undef GET
+            #undef SET
+#else
             rgba0.val[RGB_RED] = vcombine_u8(r0.val[0], r0.val[1]);
             rgba1.val[RGB_RED] = vcombine_u8(r1.val[0], r1.val[1]);
             rgba0.val[RGB_GREEN] = vcombine_u8(g0.val[0], g0.val[1]);
@@ -113,6 +145,7 @@ void upsample_neon(config_t *config,
             /* Set alpha channel to opaque (0xFF). */
             rgba0.val[RGB_ALPHA] = vdupq_n_u8(0xFF);
             rgba1.val[RGB_ALPHA] = vdupq_n_u8(0xFF);
+#endif
             /* Store RGBA pixel data to memory. */
             vst4q_u8(outptr0, rgba0);
             vst4q_u8(outptr1, rgba1);
@@ -154,6 +187,21 @@ void upsample_neon(config_t *config,
             * the "even" and "odd" Y component values.  This effectively upsamples the
             * chroma components both horizontally and vertically.
             */
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_u8m1x2_u8m1(v, idx)
+            int16x8_t g0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y0, 0)));
+            int16x8_t r0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y0, 0)));
+            int16x8_t b0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y0, 0)));
+            int16x8_t g0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y0, 1)));
+            int16x8_t r0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y0, 1)));
+            int16x8_t b0_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y0, 1)));
+            int16x8_t g1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y1, 0)));
+            int16x8_t r1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y1, 0)));
+            int16x8_t b1_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y1, 0)));
+            int16x8_t g1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), GET(y1, 1)));
+            int16x8_t r1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), GET(y1, 1)));
+            int16x8_t b1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), GET(y1, 1)));
+#else
             int16x8_t g0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), y0.val[0]));
             int16x8_t r0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), y0.val[0]));
             int16x8_t b0_even = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), y0.val[0]));
@@ -166,6 +214,7 @@ void upsample_neon(config_t *config,
             int16x8_t g1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(g_sub_y), y1.val[1]));
             int16x8_t r1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(r_sub_y), y1.val[1]));
             int16x8_t b1_odd = vreinterpretq_s16_u16(vaddw_u8(vreinterpretq_u16_s16(b_sub_y), y1.val[1]));
+#endif
             /* Convert each component to unsigned and narrow, clamping to [0-255].
             * Re-interleave the "even" and "odd" component values.
             */
@@ -177,6 +226,30 @@ void upsample_neon(config_t *config,
             uint8x8x2_t b1 = vzip_u8(vqmovun_s16(b1_even), vqmovun_s16(b1_odd));
 
             uint8x8x4_t rgba0_h, rgba1_h;
+#if defined(NEON2RVV)
+            #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+            SET(rgba0_h, RGB_RED, GET(r0, 1));
+            SET(rgba1_h, RGB_RED, GET(r1, 1));
+            SET(rgba0_h, RGB_GREEN, GET(g0, 1));
+            SET(rgba1_h, RGB_GREEN, GET(g1, 1));
+            SET(rgba0_h, RGB_BLUE, GET(b0, 1));
+            SET(rgba1_h, RGB_BLUE, GET(b1, 1));
+            /* Set alpha channel to opaque (0xFF). */
+            SET(rgba0_h, RGB_ALPHA, vdup_n_u8(0xFF));
+            SET(rgba1_h, RGB_ALPHA, vdup_n_u8(0xFF));
+
+            uint8x8x4_t rgba0_l, rgba1_l;
+            SET(rgba0_l, RGB_RED, GET(r0, 0));
+            SET(rgba1_l, RGB_RED, GET(r1, 0));
+            SET(rgba0_l, RGB_GREEN, GET(g0, 0));
+            SET(rgba1_l, RGB_GREEN, GET(g1, 0));
+            SET(rgba0_l, RGB_BLUE, GET(b0, 0));
+            SET(rgba1_l, RGB_BLUE, GET(b1, 0));
+            /* Set alpha channel to opaque (0xFF). */
+            SET(rgba0_l, RGB_ALPHA, vdup_n_u8(0xFF));
+            SET(rgba1_l, RGB_ALPHA, vdup_n_u8(0xFF));
+            #undef SET
+#else
             rgba0_h.val[RGB_RED] = r0.val[1];
             rgba1_h.val[RGB_RED] = r1.val[1];
             rgba0_h.val[RGB_GREEN] = g0.val[1];
@@ -197,6 +270,7 @@ void upsample_neon(config_t *config,
             /* Set alpha channel to opaque (0xFF). */
             rgba0_l.val[RGB_ALPHA] = vdup_n_u8(0xFF);
             rgba1_l.val[RGB_ALPHA] = vdup_n_u8(0xFF);
+#endif
             /* Store RGBA pixel data to memory. */
             switch (cols_remaining) {
             case 15:
