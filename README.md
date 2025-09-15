@@ -99,6 +99,24 @@ Cross-compile Swan for RISC-V with:
 make riscv -j<num_threads>
 ```
 
+By default, this builds a binary **without the RISC-V Vector Extension(RVV)**.
+
+To enable RVV, you can use the header-only library [neon2rvv](https://github.com/howjmay/neon2rvv), which automatically
+maps NEON intrinsics to RVV intrinsics.  
+While this approach is less efficient than hand-written RVV optimizations, it
+provides a convenient way to quickly evaluate RVV support.
+
+> [!NOTE]
+> Building with **neon2rvv** requires GCC 14 or later.  
+> The `-mrvv-vector-bits=zvl` option and `riscv_rvv_vector_bits` attribute were first  
+> introduced in GCC 14. See the [GCC 14 Release Release Notes](https://gcc.gnu.org/gcc-14/changes.html) for details.
+
+To build with RVV enabled:
+
+```bash
+make riscv NEON2RVV=TRUE -j<num_threads>
+```
+
 ### Compilation Flags
 
 Makefile accepts the following commandline arguments to configure the build.
@@ -107,6 +125,7 @@ Makefile accepts the following commandline arguments to configure the build.
 - `AUTOVEC=[FALSE|TRUE]`: using compiler auto-vectorization. Default is `FALSE`.
 - `SIMMOD=[FALSE|TRUE]`: simulation mode for local/riscv execution. Default is `FALSE` for `armv8.2-a` machines and `TRUE` for any other architectures. Uses [Arm Fake Neon Library](#arm-fake-neon-library).
 - `SIMREG=[128|256|512|1024]`: maximum supported width of [example kernels](#examples) developed with fake wide vector register implementations (affective only in simulation mode).
+- `NEON2RVV`: enable RISC-V vector extension with [`howjmay/neon2rvv` @ commit d9f8244](https://github.com/howjmay/neon2rvv/commit/d9f8244b724c41871079a5092c71c86a3e6a3036). Default is `FALSE`.
 
 ### Example Builds
 
@@ -117,6 +136,9 @@ make local CACHE=COLD AUTOVEC=TRUE SIMMOD=TRUE SIMREG=512
 
 # cross-compiling for a phone with warm caches and no compiler auto-vectorization
 make phone CACHE=WARM AUTOVEC=FALSE
+
+# cross-compiling for RISC-V with vector extension and optimized by `neon2rvv`
+make riscv NEON2RVV=TRUE -j<num_threads>
 ```
 
 ## Running
