@@ -273,7 +273,9 @@ void convolve_horizontally_neon(config_t *config,
             vst1_lane_u32(reinterpret_cast<uint32_t *>(out_row_addr), vreinterpret_u32_u8(accum8), 0);
             out_row_addr += 4;
 
+#if !defined(NEON2RVV)
             fake_neon_flusher();
+#endif
         }
 
         src_data += (num_cols + filter_length) * 4;

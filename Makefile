@@ -11,6 +11,7 @@ PHONE_OBJ_DIR = $(OBJ_DIR)/phone_obj
 RISCV_OBJ_DIR = $(OBJ_DIR)/riscv_obj
 LIB_SRC_DIR = $(SRC_DIR)/libraries
 FAKE_NEON_DIR = $(SRC_DIR)/fake_neon
+NEON2RVV_DIR = $(SRC_DIR)/neon2rvv
 UNAME_P := $(shell uname -p)
 
 INIT_KERNELS := $(wildcard $(LIB_SRC_DIR)/*/*/utility.cpp) $(BENCH_DIR)/utility.cpp
@@ -43,6 +44,7 @@ AUTOVEC = FALSE
 DEBUG = FALSE
 SIMMOD = FALSE
 SIMREG = 128
+NEON2RVV = FALSE
 
 ifeq ($(CACHE),WARM)
     $(info Cache Status -> Warm)
@@ -70,6 +72,9 @@ BASE_CFLAGS = $(CFLAGS) -Wall -Wno-unused-variable -Wno-unused-command-line-argu
 LOCAL_CFLAGS := $(BASE_CFLAGS)
 PHONE_CFLAGS := $(INC_PARAMS) $(BASE_CFLAGS) --target=aarch64-none-linux-android23 --sysroot=$(ANDROID_NDK_PATH)/sysroot -march=armv8.2-a+fp16+crypto+crc -DNEON
 RISCV_CFLAGS := $(INC_PARAMS) $(BASE_CFLAGS)
+ifeq ($(NEON2RVV),TRUE)
+	RISCV_CFLAGS += -march=rv64gcv_zvl128b -mabi=lp64d -mrvv-vector-bits=zvl -DNEON2RVV -I$(NEON2RVV_DIR)
+endif
 
 ifeq ($(UNAME_P),x86_64)
     SIMMOD = TRUE

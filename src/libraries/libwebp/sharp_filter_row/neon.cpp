@@ -55,8 +55,15 @@ void sharp_filter_row_neon(config_t *config,
             const int16x8x2_t f = vzipq_s16(e0, e1);
             const int16x8_t g0 = vreinterpretq_s16_u16(vld1q_u16(best_y + 2 * i + 0));
             const int16x8_t g1 = vreinterpretq_s16_u16(vld1q_u16(best_y + 2 * i + 8));
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_i16m1x2_i16m1(v, idx)
+            const int16x8_t h0 = vaddq_s16(g0, GET(f, 0));
+            const int16x8_t h1 = vaddq_s16(g1, GET(f, 1));
+            #undef GET
+#else
             const int16x8_t h0 = vaddq_s16(g0, f.val[0]);
             const int16x8_t h1 = vaddq_s16(g1, f.val[1]);
+#endif
             const int16x8_t i0 = vmaxq_s16(vminq_s16(h0, max), zero);
             const int16x8_t i1 = vmaxq_s16(vminq_s16(h1, max), zero);
             vst1q_u16(out + 2 * i + 0, vreinterpretq_u16_s16(i0));

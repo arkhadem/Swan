@@ -83,6 +83,19 @@ void row_opaque_neon(config_t *config,
             vmaskG = vaddq_u16(vmaskG, vshrq_n_u16(vmaskG, 4));
             vmaskB = vaddq_u16(vmaskB, vshrq_n_u16(vmaskB, 4));
 
+#if defined(NEON2RVV)
+            #define GET(v, idx) __riscv_vget_v_u8m1x4_u8m1(v, idx)
+            #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+            SET(vdst, NEON_A, vbsl_u8(vsel_trans,  GET(vdst, NEON_A), vdup_n_u8(0xFF)));
+            SET(vdst, NEON_R, blend_32_neon(vcolR, GET(vdst, NEON_R), vmaskR));
+            SET(vdst, NEON_G, blend_32_neon(vcolG, GET(vdst, NEON_G), vmaskG));
+            SET(vdst, NEON_B, blend_32_neon(vcolB, GET(vdst, NEON_B), vmaskB));
+
+            SET(vdst, NEON_A, vbsl_u8(vsel_opq, vopqDstA, GET(vdst, NEON_A)));
+            SET(vdst, NEON_R, vbsl_u8(vsel_opq, vopqDstR, GET(vdst, NEON_R)));
+            SET(vdst, NEON_G, vbsl_u8(vsel_opq, vopqDstG, GET(vdst, NEON_G)));
+            SET(vdst, NEON_B, vbsl_u8(vsel_opq, vopqDstB, GET(vdst, NEON_B)));
+#else
             vdst.val[NEON_A] = vbsl_u8(vsel_trans, vdst.val[NEON_A], vdup_n_u8(0xFF));
             vdst.val[NEON_R] = blend_32_neon(vcolR, vdst.val[NEON_R], vmaskR);
             vdst.val[NEON_G] = blend_32_neon(vcolG, vdst.val[NEON_G], vmaskG);
@@ -92,6 +105,7 @@ void row_opaque_neon(config_t *config,
             vdst.val[NEON_R] = vbsl_u8(vsel_opq, vopqDstR, vdst.val[NEON_R]);
             vdst.val[NEON_G] = vbsl_u8(vsel_opq, vopqDstG, vdst.val[NEON_G]);
             vdst.val[NEON_B] = vbsl_u8(vsel_opq, vopqDstB, vdst.val[NEON_B]);
+#endif
 
             vst4_u8((uint8_t *)dst_dst, vdst);
 

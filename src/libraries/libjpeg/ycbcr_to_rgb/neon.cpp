@@ -110,11 +110,22 @@ void ycbcr_to_rgb_neon(config_t *config,
 
             uint8x16x4_t rgba;
             /* Convert each component to unsigned and narrow, clamping to [0-255]. */
+
+#if defined(NEON2RVV)
+            #define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+            SET(rgba, RGB_RED , vcombine_u8(vqmovun_s16(r_l), vqmovun_s16(r_h)));
+            SET(rgba, RGB_GREEN, vcombine_u8(vqmovun_s16(g_l), vqmovun_s16(g_h)));
+            SET(rgba, RGB_BLUE, vcombine_u8(vqmovun_s16(b_l), vqmovun_s16(b_h)));
+            /* Set alpha channel to opaque (0xFF). */
+            SET(rgba, RGB_ALPHA, vdupq_n_u8(0xFF));
+            #undef SET
+#else
             rgba.val[RGB_RED] = vcombine_u8(vqmovun_s16(r_l), vqmovun_s16(r_h));
             rgba.val[RGB_GREEN] = vcombine_u8(vqmovun_s16(g_l), vqmovun_s16(g_h));
             rgba.val[RGB_BLUE] = vcombine_u8(vqmovun_s16(b_l), vqmovun_s16(b_h));
             /* Set alpha channel to opaque (0xFF). */
             rgba.val[RGB_ALPHA] = vdupq_n_u8(0xFF);
+#endif
             /* Store RGBA pixel data to memory. */
             vst4q_u8(outptr, rgba);
 

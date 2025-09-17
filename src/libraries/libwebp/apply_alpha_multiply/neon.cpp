@@ -21,6 +21,27 @@
 #define MULTIPLIER(a) ((a)*0x8081)
 #define PREMULTIPLY(x, m) (((x) * (m)) >> 23)
 
+#if defined(NEON2RVV)
+#define GET(v, idx) __riscv_vget_v_u8m1x4_u8m1(v, idx)
+#define SET(v, idx, val) v = __riscv_vset_v_u8m1_u8m1x4(v, idx, val)
+#define MULTIPLY_BY_ALPHA(V, ALPHA, OTHER)                       \
+    do {                                                         \
+        const uint8x8_t alpha = GET(V, ALPHA);                   \
+        const uint16x8_t r1 = vmull_u8(GET(V, 1), alpha);        \
+        const uint16x8_t g1 = vmull_u8(GET(V, 2), alpha);        \
+        const uint16x8_t b1 = vmull_u8(GET(V, (OTHER)), alpha);  \
+        /* we use: v / 255 = (v + 1 + (v >> 8)) >> 8 */          \
+        const uint16x8_t r2 = vsraq_n_u16(r1, r1, 8);            \
+        const uint16x8_t g2 = vsraq_n_u16(g1, g1, 8);            \
+        const uint16x8_t b2 = vsraq_n_u16(b1, b1, 8);            \
+        const uint16x8_t r3 = vaddq_u16(r2, kOne);               \
+        const uint16x8_t g3 = vaddq_u16(g2, kOne);               \
+        const uint16x8_t b3 = vaddq_u16(b2, kOne);               \
+        SET(V, 1, vshrn_n_u16(r3, 8));                           \
+        SET(V, 2, vshrn_n_u16(g3, 8));                           \
+        SET(V, (OTHER), vshrn_n_u16(b3, 8));                     \
+    } while (0)
+#else
 #define MULTIPLY_BY_ALPHA(V, ALPHA, OTHER)                       \
     do {                                                         \
         const uint8x8_t alpha = (V).val[(ALPHA)];                \
@@ -38,6 +59,7 @@
         (V).val[2] = vshrn_n_u16(g3, 8);                         \
         (V).val[(OTHER)] = vshrn_n_u16(b3, 8);                   \
     } while (0)
+#endif
 
 /* The following function is the modified version of ApplyAlphaMultiply_NEON,
  * provided in the libwebp library. Please refer to alpha_processing_neon.c

@@ -349,7 +349,9 @@ void gemm_fp32_neon(config_t *config,
 #endif
 
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
                 fake_neon_flusher();
+#endif
 #endif
             }
             m += 32;
@@ -448,7 +450,9 @@ void gemm_fp32_neon(config_t *config,
                 vst1q_f32(output_addr + 12, vout3);
 #endif
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
                 fake_neon_flusher();
+#endif
 #endif
             }
             m += 16;
@@ -509,7 +513,9 @@ void gemm_fp32_neon(config_t *config,
 #endif
 
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
                 fake_neon_flusher();
+#endif
 #endif
             }
             m += 8;
@@ -543,7 +549,9 @@ void gemm_fp32_neon(config_t *config,
                 vst1q_f32(output_addr, vout0123);
 
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
                 fake_neon_flusher();
+#endif
 #endif
             }
             m += 4;

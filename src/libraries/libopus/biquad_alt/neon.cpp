@@ -89,12 +89,22 @@ void biquad_alt_neon(config_t *config,
         t0_s32x2x2 = vzip_s32(A_L_s32x2, A_L_s32x2);
         t1_s32x2x2 = vzip_s32(A_U_s32x2, A_U_s32x2);
         t2_s32x2x2 = vzip_s32(t_s32x2, t_s32x2);
+#if defined(NEON2RVV)
+#define GET(v, idx) __riscv_vget_v_i32m1x2_i32m1(v, idx)
+        A_L_s32x4 = vcombine_s32(GET(t0_s32x2x2, 0), GET(t0_s32x2x2, 1));    /* A{0,0,1,1}_L_Q28          */
+        A_U_s32x4 = vcombine_s32(GET(t1_s32x2x2, 0), GET(t1_s32x2x2, 1));    /* A{0,0,1,1}_U_Q28          */
+        B_Q28_s32x4 = vcombine_s32(GET(t2_s32x2x2, 0), GET(t2_s32x2x2, 1));  /* B_Q28[ {1,1,2,2} ]        */
+        S_s32x4 = vld1q_s32(S_in);                                           /* S0 = S_in[ 0 ]; S3 = S_in[ 3 ]; */
+        S_s32x2x2 = vtrn_s32(vget_low_s32(S_s32x4), vget_high_s32(S_s32x4)); /* S2 = S_in[ 1 ]; S1 = S_in[ 2 ]; */
+        S_s32x4 = vcombine_s32(GET(S_s32x2x2, 0), GET(S_s32x2x2, 1));
+#else
         A_L_s32x4 = vcombine_s32(t0_s32x2x2.val[0], t0_s32x2x2.val[1]);      /* A{0,0,1,1}_L_Q28          */
         A_U_s32x4 = vcombine_s32(t1_s32x2x2.val[0], t1_s32x2x2.val[1]);      /* A{0,0,1,1}_U_Q28          */
         B_Q28_s32x4 = vcombine_s32(t2_s32x2x2.val[0], t2_s32x2x2.val[1]);    /* B_Q28[ {1,1,2,2} ]        */
         S_s32x4 = vld1q_s32(S_in);                                           /* S0 = S_in[ 0 ]; S3 = S_in[ 3 ]; */
         S_s32x2x2 = vtrn_s32(vget_low_s32(S_s32x4), vget_high_s32(S_s32x4)); /* S2 = S_in[ 1 ]; S1 = S_in[ 2 ]; */
         S_s32x4 = vcombine_s32(S_s32x2x2.val[0], S_s32x2x2.val[1]);
+        #endif
 
         for (k = 0; k < len - 1; k += 2) {
             int32x4_t in_s32x4[2], t_s32x4;

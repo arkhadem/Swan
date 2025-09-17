@@ -70,11 +70,15 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
 #ifdef SWAN_SIMULATION
         char graph_name[100];
         sprintf(graph_name, "%s_%s_%d", library, kernel, SWAN_REG_TYPE);
+#if !defined(NEON2RVV)
         fake_neon_initializer(graph_name);
+#endif
 #endif
         kernel_functions[lib_str][ker_str][platform_t::NEON_PLAT](config, input[0], output_neon[0]);
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
         fake_neon_finisher();
+#endif
 #endif
         utility_function.comparer(config, output_scalar[0], output_neon[0]);
     } else {
@@ -92,11 +96,15 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
 #ifdef SWAN_SIMULATION
                 char graph_name[100];
                 sprintf(graph_name, "%s_%s_%d", library, kernel, SWAN_REG_TYPE);
+#if !defined(NEON2RVV)
                 fake_neon_initializer(graph_name);
+#endif
 #endif
                 kernel_func(config, input[idx], output[idx]);
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
                 fake_neon_finisher();
+#endif
 #endif
             }
             clock_t end = clock();
@@ -118,7 +126,7 @@ void benchmark_runner(platform_t platform, const char *library, const char *kern
 #endif
         }
 
-        printf("Successfully finished run in");
+        printf("Successfully finished run in ");
 #ifdef SWAN_SIMULATION
         printf("simulation mode!\n");
 #else

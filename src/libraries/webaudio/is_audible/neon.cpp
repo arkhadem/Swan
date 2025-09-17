@@ -136,7 +136,9 @@ void is_audible_neon(config_t *config,
             Vsvesq(my_data, 1, &channel_energy, data_size);
             energy += channel_energy;
 #ifdef SWAN_SIMULATION
+#if !defined(NEON2RVV)
             fake_neon_flusher();
+#endif
 #endif
         }
 
